@@ -1,5 +1,6 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.util.Random;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -8,11 +9,17 @@ import com.orsoncharts.Chart3D;
 import com.orsoncharts.Chart3DFactory;
 import com.orsoncharts.Chart3DPanel;
 import com.orsoncharts.Colors;
+import com.orsoncharts.axis.NumberAxis3D;
+import com.orsoncharts.axis.NumberTickSelector;
+import com.orsoncharts.data.Dataset3D;
+import com.orsoncharts.data.DefaultKeyedValues;
+import com.orsoncharts.data.KeyedValues;
 import com.orsoncharts.data.category.CategoryDataset3D;
 import com.orsoncharts.data.category.StandardCategoryDataset3D;
 import com.orsoncharts.data.xyz.XYZDataset;
 import com.orsoncharts.data.xyz.XYZSeries;
 import com.orsoncharts.data.xyz.XYZSeriesCollection;
+import com.orsoncharts.demo.LineChart3D1;
 import com.orsoncharts.demo.ScatterPlot3D1;
 import com.orsoncharts.demo.swing.DemoPanel;
 import com.orsoncharts.demo.swing.ExitOnClose;
@@ -34,16 +41,21 @@ import com.orsoncharts.renderer.xyz.ScatterXYZRenderer;
 
 public class Visualizer  extends JFrame
 {
-    public Visualizer(String title) {
+	public enum PLOTTYPE
+	{
+		LINE, AREA, SCATTER;
+	}
+	
+    public Visualizer(String title, PLOTTYPE ptype) {
         super(title);
         addWindowListener(new ExitOnClose());
-        getContentPane().add(createDemoPanel());
+        getContentPane().add(createDemoPanel(ptype));
     }
 
     
     public static void main(String[] args) {
     	Visualizer app = new Visualizer(
-                "MY demo");
+                "MY demo", PLOTTYPE.LINE);
         app.pack();
         app.setVisible(true);
     }
@@ -55,11 +67,28 @@ public class Visualizer  extends JFrame
      * 
      * @return A panel containing the content for the demo.
      */
-    public static JPanel createDemoPanel() {
+    public static JPanel createDemoPanel(PLOTTYPE ptype) {
         DemoPanel content = new DemoPanel(new BorderLayout());
         content.setPreferredSize(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
-        XYZDataset dataset = Visualizer.createDataset();
-        Chart3D chart = Visualizer.createChart(dataset);
+        
+        Chart3D chart = null;
+        
+        switch (ptype) 
+        {
+        
+        case LINE:   
+        	CategoryDataset3D dataset = Visualizer.createLineDataset();
+            chart = Visualizer.createLineChart(dataset);
+            break;
+        case AREA:
+        	
+        case SCATTER:
+        	XYZDataset dataset2 = Visualizer.createScatterDataset();
+        	chart = Visualizer.createScatterChart(dataset2);
+        	break;
+  	
+        }
+
         Chart3DPanel chartPanel = new Chart3DPanel(chart);
         content.setChartPanel(chartPanel);
         chartPanel.zoomToFit(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
@@ -67,8 +96,8 @@ public class Visualizer  extends JFrame
         return content;
     }
 
-    public static XYZDataset createDataset() {
-        XYZSeries s1 = createRandomSeries("S1", 10);
+    public static XYZDataset createScatterDataset() {
+        XYZSeries s1 = createRandomSeries("S1", 15);
         XYZSeries s2 = createRandomSeries("S2", 50);
         XYZSeries s3 = createRandomSeries("S3", 150);
         XYZSeriesCollection dataset = new XYZSeriesCollection();
@@ -86,6 +115,23 @@ public class Visualizer  extends JFrame
         return s;
     }
     
+    public static CategoryDataset3D createLineDataset() {
+        StandardCategoryDataset3D dataset = new StandardCategoryDataset3D();
+        dataset.addSeriesAsRow("Safari", createLineData());
+        dataset.addSeriesAsRow("Firefox", createLineData());
+        dataset.addSeriesAsRow("Internet Explorer", createLineData());
+        dataset.addSeriesAsRow("Chrome", createLineData());
+        return dataset;
+    }
+    
+    private static KeyedValues<Double> createLineData() {
+        DefaultKeyedValues<Double> series = new DefaultKeyedValues<Double>();
+        series.put("Nov-12", Math.random());
+        series.put("Dec-12", Math.random());
+        series.put("Jan-13", Math.random());
+        return series;
+    }
+    
     /**
      * Creates a scatter chart based on the supplied dataset.
      * 
@@ -93,7 +139,7 @@ public class Visualizer  extends JFrame
      * 
      * @return A scatter chart. 
      */
-    public static Chart3D createChart(XYZDataset dataset) {
+    public static Chart3D createScatterChart(XYZDataset dataset) {
         Chart3D chart = Chart3DFactory.createScatterChart("MY plot demo", 
                 "Here could be your ad!", dataset, "X", "Y", "Z");
         XYZPlot plot = (XYZPlot) chart.getPlot();
@@ -105,5 +151,27 @@ public class Visualizer  extends JFrame
         renderer.setColors(Colors.createIntenseColors());
         chart.setViewPoint(ViewPoint3D.createAboveLeftViewPoint(40));
         return chart;
+    }
+    
+    /**
+     * Creates a line chart with the supplied dataset.
+     * 
+     * @param dataset  the dataset.
+     * 
+     * @return A line chart.
+     */
+    public static Chart3D createLineChart(CategoryDataset3D dataset) {
+        Chart3D chart = Chart3DFactory.createLineChart(
+                "Here are some lines", 
+                "made randomly", dataset, null, null, 
+                "description");
+        CategoryPlot3D plot = (CategoryPlot3D) chart.getPlot();
+        plot.setDimensions(new Dimension3D(18, 8, 4));
+        plot.getRowAxis().setVisible(false);
+        NumberAxis3D valueAxis = (NumberAxis3D) plot.getValueAxis();
+        valueAxis.setTickSelector(new NumberTickSelector(true));
+        plot.getRenderer().setColors(Colors.createFancyDarkColors());
+        chart.setViewPoint(ViewPoint3D.createAboveViewPoint(30));
+        return chart;    
     }
 }

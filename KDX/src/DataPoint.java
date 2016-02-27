@@ -2,22 +2,61 @@
 public class DataPoint {
 	
 	public static int DIMENSIONS = 1;
+	public static int TIME_COLUMN = 1;
+	
+	public static double[] minValues;
+	public static double[] maxValues;
+	
 	
 	public double time;
 	public double[] values;
+	int indexFilled = 0;
 	
-	public DataPoint(double[] newValues, double timePoint)
+	
+	public DataPoint()
 	{
-		this.time = timePoint;
-		
-		if(newValues.length != DIMENSIONS)
+		this.values = new double[DIMENSIONS];
+		if(minValues == null)
 		{
-			//create an empty array
-			this.values = new double[DIMENSIONS];
-			System.out.println("Wrong number of values!");
-			return;
+			//min and max values are saved for each dimension in order to compute the bandwidths
+		    minValues = new double[DataPoint.DIMENSIONS];
+		    maxValues = new double[DataPoint.DIMENSIONS];
+		    for(int i = 0; i<DIMENSIONS; i++)
+		    {
+		    	minValues[i] = Double.MAX_VALUE;
+		    	maxValues[i] = Double.MIN_VALUE;
+		    }
+		    
 		}
-		//set values
-		this.values = newValues;
+		
+	}
+	
+	public boolean AddData(double data)
+	{
+		if(indexFilled >= DIMENSIONS)
+			return false;
+		//new min value
+		if(data < minValues[indexFilled])
+		{
+			minValues[indexFilled] = data;
+		}
+		//new max value
+		if(data > maxValues[indexFilled])
+		{
+			maxValues[indexFilled] = data;
+		}
+		
+		this.values[indexFilled] = data;
+		indexFilled++;
+		return true;
+	}
+	
+	public boolean SetTime(double time)
+	{
+		if(time<0)
+			return false;
+		
+		this.time = time;
+		return true;
 	}
 }

@@ -6,7 +6,7 @@ public class DataPoint {
 	
 	public static double[] minValues;
 	public static double[] maxValues;
-	
+	 
 	
 	public double time;
 	public double[] values;

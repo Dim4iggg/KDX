@@ -2,10 +2,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import org.apache.commons.math3.stat.regression.*;
-import org.jzy3d.analysis.AnalysisLauncher;
 
 import jxl.Cell;
-import jxl.CellType;
+import jxl.CellType; 
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.read.biff.BiffException;

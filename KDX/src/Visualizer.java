@@ -1,5 +1,6 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Random;
 
 import javax.swing.JFrame;
@@ -46,19 +47,22 @@ public class Visualizer  extends JFrame
 		LINE, AREA, SCATTER;
 	}
 	
+	static XYZSeriesCollection scatterdataset = null;
+	static CategoryDataset3D linedataset = null;
+	
     public Visualizer(String title, PLOTTYPE ptype) {
         super(title);
         addWindowListener(new ExitOnClose());
         getContentPane().add(createDemoPanel(ptype));
     }
 
-    
+   /* 
     public static void main(String[] args) {
     	Visualizer app = new Visualizer(
-                "MY demo", PLOTTYPE.LINE);
+                "MY demo", PLOTTYPE.SCATTER);
         app.pack();
         app.setVisible(true);
-    }
+    } */
     
     /**
      * Returns a panel containing the content for the demo.  This method is
@@ -77,14 +81,15 @@ public class Visualizer  extends JFrame
         {
         
         case LINE:   
-        	CategoryDataset3D dataset = Visualizer.createLineDataset();
-            chart = Visualizer.createLineChart(dataset);
+        	linedataset = Visualizer.createLineDataset();
+            chart = Visualizer.createLineChart(linedataset);  //TODO: 
             break;
         case AREA:
         	
         case SCATTER:
-        	XYZDataset dataset2 = Visualizer.createScatterDataset();
-        	chart = Visualizer.createScatterChart(dataset2);
+        	//XYZDataset dataset2 = Visualizer.createScatterDataset();
+        	//scatterdataset = new XYZSeriesCollection();
+        	chart = Visualizer.createScatterChart(scatterdataset);
         	break;
   	
         }
@@ -95,7 +100,28 @@ public class Visualizer  extends JFrame
         content.add(new DisplayPanel3D(chartPanel ,false, false));
         return content;
     }
+    
+    public static void AddPointSet(ArrayList<DataPoint> points, String title)
+    {
+    	if(scatterdataset == null)
+    	{
+    		scatterdataset = new XYZSeriesCollection();
+    	}
+    	
+    	 XYZSeries s = new XYZSeries(title);
+    	 DataPoint p;
+         for (int i = 0; i < points.size(); i++) 
+         {
+        	 p = points.get(i);
+             s.add(p.values[0], 1, p.time);
+         }
+         scatterdataset.add(s);
+        
+       
+    }
 
+
+    
     public static XYZDataset createScatterDataset() {
         XYZSeries s1 = createRandomSeries("S1", 15);
         XYZSeries s2 = createRandomSeries("S2", 50);
@@ -140,8 +166,8 @@ public class Visualizer  extends JFrame
      * @return A scatter chart. 
      */
     public static Chart3D createScatterChart(XYZDataset dataset) {
-        Chart3D chart = Chart3DFactory.createScatterChart("MY plot demo", 
-                "Here could be your ad!", dataset, "X", "Y", "Z");
+        Chart3D chart = Chart3DFactory.createScatterChart("KDX Demo", 
+                "Data Points", dataset, "X", "Density", "Time");
         XYZPlot plot = (XYZPlot) chart.getPlot();
         plot.setDimensions(new Dimension3D(10.0, 4.0, 4.0));
         plot.setLegendLabelGenerator(new StandardXYZLabelGenerator(

@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+
 import org.apache.commons.math3.stat.regression.*;
 
 import jxl.Cell;
@@ -23,6 +24,9 @@ public class Main {
 			
 	public static void main(String[] args) {
 		
+		
+        
+		
 	    points  = new ArrayList<>();
 	    
 	  //read in data
@@ -33,9 +37,11 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	    Visualizer.AddPointSet(points, "Sample Points");
+	    
 	    //generate equally distributed pseudo points (eg 5 points)
 	    ArrayList<DataPoint> Mu = GeneratePseudoPoints(5);
-	    
+	    Visualizer.AddPointSet(Mu, "Pseudo Points");
 	    
 	    //chose F from S  (eg. every second point)
 	    ArrayList<DataPoint> F = new ArrayList<>();
@@ -43,7 +49,8 @@ public class Main {
 	    {
 	    	F.add(points.get(i));
 	    }
-
+	    Visualizer.AddPointSet(F, "Fitting Points");
+	    
 	    //apply KDX to data
 	    //TODO:  FitKDX(points, F, Mu, ..., ..., 3);
 	    
@@ -55,6 +62,11 @@ public class Main {
 			e.printStackTrace();
 		}
 	    
+	    Visualizer app = new Visualizer(
+                "KDX", Visualizer.PLOTTYPE.SCATTER);
+        app.pack();
+        app.setVisible(true);
+        
 	    
 		/*
 		OLSMultipleLinearRegression regression2 = new OLSMultipleLinearRegression();
@@ -151,7 +163,9 @@ public class Main {
 				pPoint.AddData(pseudoValue); 
 				s += pseudoValue + "; ";
 			}
+			mu.add(pPoint);
 			System.out.println(s);
+			
 		}
 		return mu;
 	}
@@ -308,4 +322,6 @@ public class Main {
 	    
 		return regressionParameters;
 	}
+
+	
 }

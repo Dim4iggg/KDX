@@ -3,11 +3,11 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry kind="lib" path="C:/Users/Dmytro/git/KDX/jxl.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Dmytro/Downloads/log4j-1.2.17.jar"/>
-	<classpathentry kind="lib" path="C:/Downloads/jogamp-java3d/j3dcore.jar"/>
-	<classpathentry kind="lib" path="C:/Downloads/jogamp-java3d/j3dutils.jar"/>
-	<classpathentry kind="lib" path="C:/Downloads/jogamp-java3d/vecmath.jar"/>
-	<classpathentry kind="lib" path="C:/Downloads/jogamp-fat-all/jogamp-fat/jogamp-fat.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Dmytro/Downloads/jzy3d-api-0.9.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Dmytro/git/KDX/j3dutils.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Dmytro/git/KDX/jzy3d-api-0.9.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Dmytro/git/KDX/log4j-1.2.17.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Dmytro/git/KDX/vecmath.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Dmytro/git/KDX/j3dcore.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Dmytro/git/KDX/jogamp-fat.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

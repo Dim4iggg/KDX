@@ -81,7 +81,7 @@ public class Visualizer  extends JFrame
         {
         
         case LINE:   
-        	linedataset = Visualizer.createLineDataset();
+        	//linedataset = Visualizer.createLineDataset();
             chart = Visualizer.createLineChart(linedataset);  //TODO: 
             break;
         case AREA:
@@ -116,11 +116,62 @@ public class Visualizer  extends JFrame
              s.add(p.values[0], 1, p.time);
          }
          scatterdataset.add(s);
-        
-       
     }
 
-
+    public static void AddDensityLineSet(DataPoint point, double density, String title, double[][] spatialBWidth)
+    {
+    	if(linedataset == null)
+    	{
+    		linedataset = new StandardCategoryDataset3D();
+    	}
+    	
+    	
+    	DefaultKeyedValues<Double> series = new DefaultKeyedValues<Double>();
+    	int numRefs = 5;
+    	
+       // series.put("Nov-12", Math.random());
+        
+        // 2 points "left" from the sample point
+        for(int i= numRefs;  i>0; i--)
+        {
+        	//copy all values
+        	double[] lpoint =  new double[point.values.length];
+        	for(int j =0; j<lpoint.length; j++)
+        	{
+        		lpoint[j] = point.values[j];
+        	}
+        	
+        	//move in 1st dimension left //TODO: change to the dimension that is shown
+        	double xPos = lpoint[0] - 0.1*(i+1);
+        	lpoint[0] = xPos;
+        	double val = Main.GaussianSpatialDensityKernel(point.values, lpoint, spatialBWidth);
+        	series.put(xPos, val);
+        	System.out.println(xPos);
+        } 
+        
+        series.put(point.values[0], density);
+        
+        // 2 points "right" from the sample point
+        for(int i= 0; i<numRefs; i++)
+        {
+        	//copy all values
+        	double[] lpoint =  new double[point.values.length];
+        	for(int j =0; j<lpoint.length; j++)
+        	{
+        		lpoint[j] = point.values[j];
+        	}
+        	
+        	//move in 1st dimension right //TODO: change to the dimension that is shown
+        	double xPos = lpoint[0] + 0.1*(i+1);
+        	lpoint[0] = xPos;
+        	double val = Main.GaussianSpatialDensityKernel(point.values, lpoint, spatialBWidth);
+        	series.put(xPos, val);
+        	System.out.println(xPos);
+        }
+        
+        
+         ((StandardCategoryDataset3D) linedataset).addSeriesAsRow(title, series);
+    }
     
     public static XYZDataset createScatterDataset() {
         XYZSeries s1 = createRandomSeries("S1", 15);
@@ -140,6 +191,8 @@ public class Visualizer  extends JFrame
         }
         return s;
     }
+    
+    
     
     public static CategoryDataset3D createLineDataset() {
         StandardCategoryDataset3D dataset = new StandardCategoryDataset3D();

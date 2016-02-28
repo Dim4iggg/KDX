@@ -43,7 +43,7 @@ public class Main {
 	    ArrayList<DataPoint> Mu = GeneratePseudoPoints(5);
 	    Visualizer.AddPointSet(Mu, "Pseudo Points");
 	    
-	    //chose F from S  (eg. every second point)
+	    //chose F from S  (eg. every second point) -> here every point! F=S
 	    ArrayList<DataPoint> F = new ArrayList<>();
 	    for(int i=0; i<points.size(); i+=2)
 	    {
@@ -62,8 +62,11 @@ public class Main {
 			e.printStackTrace();
 		}
 	    
+	    
+	    FitKDX(points, F, Mu, new double[10][10], new double[3][3] , 2);
+	    
 	    Visualizer app = new Visualizer(
-                "KDX", Visualizer.PLOTTYPE.SCATTER);
+                "KDX", Visualizer.PLOTTYPE.LINE);
         app.pack();
         app.setVisible(true);
         
@@ -182,8 +185,15 @@ public class Main {
 		//get historic density estimates
 		for(int j = 0; j<N; j++)
 		{
-			 k[j] =  KDE(F.get(j).values, spatialBWidth, temporalBWidth , S);
+			 //k[j] =  KDE(F.get(j).values, spatialBWidth, temporalBWidth , S);
+			//apply gaussian density function for each point
+			k[j] = GaussianSpatialDensityKernel(F.get(j).values, F.get(j).values, spatialBWidth);
+			System.out.println( "k[" + j + "] = " + k[j]);
+			//add density line to visualization
+			Visualizer.AddDensityLineSet(F.get(j),k[j], j+"s point", spatialBWidth);
 			
+			//for each pseudo point compute its density with a kernel 
+			// as the sum of gaussian densities of neighboring sample points
 			for(int i=0; i<m; i++)
 			{
 				double kernel = GaussianSpatialDensityKernel(F.get(j).values, Mu.get(i).values, spatialBWidth);
@@ -223,6 +233,12 @@ public class Main {
 			}
 		}
 		
+		//TODO: REMOVE! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+		if(true)
+			return k;
+		//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+		
+		
 		//fit regression coefficients
 		//double[] beta = new double[(m-1)*O+1];
 		double[] beta = Regress(P, p, m, O);
@@ -250,7 +266,7 @@ public class Main {
 			}
 		}
 		
-		return alpha;
+		return alpha; 
 	}
 	
 	private static double SpatioTemporalDensity(int N, double[] pointValues, double pointTime, double[][] spatialBWidth, double[][] temporalBWidth , ArrayList<DataPoint> S)
@@ -260,7 +276,7 @@ public class Main {
 		return k;
 	}
 	
-	private static double KDE(double[] pointValues, double[][] spatialBWidth, double[][] temporalBWidth , ArrayList<DataPoint> S)
+	public static double KDE(double[] pointValues, double[][] spatialBWidth, double[][] temporalBWidth , ArrayList<DataPoint> S)
 	{
 		//TODO: k berechnen wie?
 		double k = 0;
@@ -275,7 +291,7 @@ public class Main {
 		return k;
 	}		
 			
-	private static double GaussianSpatialDensityKernel(double[] xValues, double[] muValues, double[][] spatialBWidth)
+	public static double GaussianSpatialDensityKernel(double[] xValues, double[] muValues, double[][] spatialBWidth)
 	{
 
 		//TODO: wie wird die bandbreite angegeben - SUMi - was genau bedeutet sie?
@@ -283,6 +299,8 @@ public class Main {
 		
 		return summand;
 	}
+	
+	
 	
 	private static double XSquare(double[] xValues, double[] muValues)
 	{

@@ -51,8 +51,7 @@ public class Main {
 	    }
 	    Visualizer.AddPointSet(F, "Fitting Points");
 	    
-	    //apply KDX to data
-	    //TODO:  FitKDX(points, F, Mu, ..., ..., 3);
+
 	    
 	    //visualize data
 	    try {
@@ -66,40 +65,10 @@ public class Main {
 	    FitKDX(points, F, Mu, new double[10][10], new double[3][3] , 2);
 	    
 	    Visualizer app = new Visualizer(
-                "KDX", Visualizer.PLOTTYPE.LINE);
+                "KDX", Visualizer.PLOTTYPE.SCATTER);
         app.pack();
         app.setVisible(true);
         
-	    
-		/*
-		OLSMultipleLinearRegression regression2 = new OLSMultipleLinearRegression();
-
-		 double[] y = {
-		            2.6,
-		            1.6,
-		            4.0,
-		            3.0,
-		            4.9
-		    };
-		    double[][] x2 =
-		            {
-		                    { 1, 1.2 },
-		                    { 1, 3.0  },
-		                    { 1, 4.5  },
-		                    { 1, 5.8  },
-		                    { 1, 7.2  },
-		            };
-
-	    regression2.setNoIntercept(true);
-	    regression2.newSampleData(y, x2);
-
-	    double[] regressionParameters = regression2.estimateRegressionParameters();
-
-	    for (int i = 0; i < regressionParameters.length; i++) {
-	        double regressionParameter = regressionParameters[i];
-	        System.out.println(i + " " + regressionParameter);
-	    }
-	    */
 	}
 
 

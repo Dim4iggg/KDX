@@ -56,13 +56,6 @@ public class Visualizer  extends JFrame
         getContentPane().add(createDemoPanel(ptype));
     }
 
-   /* 
-    public static void main(String[] args) {
-    	Visualizer app = new Visualizer(
-                "MY demo", PLOTTYPE.SCATTER);
-        app.pack();
-        app.setVisible(true);
-    } */
     
     /**
      * Returns a panel containing the content for the demo.  This method is
@@ -131,7 +124,7 @@ public class Visualizer  extends JFrame
     	
        // series.put("Nov-12", Math.random());
         
-        // 2 points "left" from the sample point
+        // 5 points "left" from the sample point
         for(int i= numRefs;  i>0; i--)
         {
         	//copy all values
@@ -151,20 +144,20 @@ public class Visualizer  extends JFrame
         
         series.put(point.values[0], density);
         
-        // 2 points "right" from the sample point
+        // 5 points "right" from the sample point
         for(int i= 0; i<numRefs; i++)
         {
         	//copy all values
-        	double[] lpoint =  new double[point.values.length];
-        	for(int j =0; j<lpoint.length; j++)
+        	double[] rpoint =  new double[point.values.length];
+        	for(int j =0; j<rpoint.length; j++)
         	{
-        		lpoint[j] = point.values[j];
+        		rpoint[j] = point.values[j];
         	}
         	
         	//move in 1st dimension right //TODO: change to the dimension that is shown
-        	double xPos = lpoint[0] + 0.1*(i+1);
-        	lpoint[0] = xPos;
-        	double val = Main.GaussianSpatialDensityKernel(point.values, lpoint, spatialBWidth);
+        	double xPos = rpoint[0] + 0.1*(i+1);
+        	rpoint[0] = xPos;
+        	double val = Main.GaussianSpatialDensityKernel(point.values, rpoint, spatialBWidth);
         	series.put(xPos, val);
         	System.out.println(xPos);
         }
@@ -193,23 +186,7 @@ public class Visualizer  extends JFrame
     }
     
     
-    
-    public static CategoryDataset3D createLineDataset() {
-        StandardCategoryDataset3D dataset = new StandardCategoryDataset3D();
-        dataset.addSeriesAsRow("Safari", createLineData());
-        dataset.addSeriesAsRow("Firefox", createLineData());
-        dataset.addSeriesAsRow("Internet Explorer", createLineData());
-        dataset.addSeriesAsRow("Chrome", createLineData());
-        return dataset;
-    }
-    
-    private static KeyedValues<Double> createLineData() {
-        DefaultKeyedValues<Double> series = new DefaultKeyedValues<Double>();
-        series.put("Nov-12", Math.random());
-        series.put("Dec-12", Math.random());
-        series.put("Jan-13", Math.random());
-        return series;
-    }
+
     
     /**
      * Creates a scatter chart based on the supplied dataset.

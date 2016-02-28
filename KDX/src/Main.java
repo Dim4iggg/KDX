@@ -65,7 +65,7 @@ public class Main {
 	    FitKDX(points, F, Mu, new double[10][10], new double[3][3] , 2);
 	    
 	    Visualizer app = new Visualizer(
-                "KDX", Visualizer.PLOTTYPE.SCATTER);
+                "KDX", Visualizer.PLOTTYPE.ALL);
         app.pack();
         app.setVisible(true);
         

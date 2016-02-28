@@ -3,6 +3,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Random;
 
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -44,7 +45,7 @@ public class Visualizer  extends JFrame
 {
 	public enum PLOTTYPE
 	{
-		LINE, AREA, SCATTER;
+		LINE, AREA, SCATTER, ALL;
 	}
 	
 	static XYZSeriesCollection scatterdataset = null;
@@ -65,33 +66,51 @@ public class Visualizer  extends JFrame
      * @return A panel containing the content for the demo.
      */
     public static JPanel createDemoPanel(PLOTTYPE ptype) {
-        DemoPanel content = new DemoPanel(new BorderLayout());
-        content.setPreferredSize(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
+    	DemoPanel mainPanel = new DemoPanel(new BorderLayout());
+    	mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+    	mainPanel.setPreferredSize(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
         
-        Chart3D chart = null;
+    	//prepare scatter plot
+        DemoPanel scatterPanel = new DemoPanel(new BorderLayout());
+        scatterPanel.setPreferredSize(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
+        Chart3D scatterChart = Visualizer.createScatterChart(scatterdataset);
+    	Chart3DPanel scatterChartPanel = new Chart3DPanel(scatterChart);
+    	scatterPanel.setChartPanel(scatterChartPanel);
+    	scatterChartPanel.zoomToFit(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);           
+        scatterPanel.add(new DisplayPanel3D(scatterChartPanel ,false, false));
+               
+        //prepare line plot
+        DemoPanel linePanel = new DemoPanel(new BorderLayout());
+        linePanel.setPreferredSize(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
+        Chart3D lineChart = Visualizer.createLineChart(linedataset); 
+        Chart3DPanel lineChartPanel = new Chart3DPanel(lineChart);
+        linePanel.setChartPanel(lineChartPanel);
+        lineChartPanel.zoomToFit(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
+        linePanel.add(new DisplayPanel3D(lineChartPanel ,false, false));
         
+        //add panels 
         switch (ptype) 
         {
         
-        case LINE:   
-        	//linedataset = Visualizer.createLineDataset();
-            chart = Visualizer.createLineChart(linedataset);  //TODO: 
-            break;
+        case LINE:   	
+        	mainPanel.add(linePanel);
+        	break;
+           
         case AREA:
+        	break;
         	
         case SCATTER:
-        	//XYZDataset dataset2 = Visualizer.createScatterDataset();
-        	//scatterdataset = new XYZSeriesCollection();
-        	chart = Visualizer.createScatterChart(scatterdataset);
-        	break;
-  	
+        	mainPanel.add(scatterPanel);
+            break;
+            
+        case ALL:
+
+        	mainPanel.add(scatterPanel);
+            mainPanel.add(linePanel);
+            break;   
         }
 
-        Chart3DPanel chartPanel = new Chart3DPanel(chart);
-        content.setChartPanel(chartPanel);
-        chartPanel.zoomToFit(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
-        content.add(new DisplayPanel3D(chartPanel ,false, false));
-        return content;
+        return mainPanel;
     }
     
     public static void AddPointSet(ArrayList<DataPoint> points, String title)
@@ -121,11 +140,9 @@ public class Visualizer  extends JFrame
     	
     	DefaultKeyedValues<Double> series = new DefaultKeyedValues<Double>();
     	int numRefs = 5;
-    	
-       // series.put("Nov-12", Math.random());
-        
+
         // 5 points "left" from the sample point
-        for(int i= numRefs;  i>0; i--)
+        for(int i= numRefs-1;  i>0; i--)
         {
         	//copy all values
         	double[] lpoint =  new double[point.values.length];
@@ -139,7 +156,6 @@ public class Visualizer  extends JFrame
         	lpoint[0] = xPos;
         	double val = Main.GaussianSpatialDensityKernel(point.values, lpoint, spatialBWidth);
         	series.put(xPos, val);
-        	System.out.println(xPos);
         } 
         
         series.put(point.values[0], density);
@@ -159,7 +175,6 @@ public class Visualizer  extends JFrame
         	rpoint[0] = xPos;
         	double val = Main.GaussianSpatialDensityKernel(point.values, rpoint, spatialBWidth);
         	series.put(xPos, val);
-        	System.out.println(xPos);
         }
         
         
@@ -199,7 +214,7 @@ public class Visualizer  extends JFrame
         Chart3D chart = Chart3DFactory.createScatterChart("KDX Demo", 
                 "Data Points", dataset, "X", "Density", "Time");
         XYZPlot plot = (XYZPlot) chart.getPlot();
-        plot.setDimensions(new Dimension3D(10.0, 4.0, 4.0));
+        //plot.setDimensions(new Dimension3D(10.0, 4.0, 4.0));
         plot.setLegendLabelGenerator(new StandardXYZLabelGenerator(
                 StandardXYZLabelGenerator.COUNT_TEMPLATE));
         ScatterXYZRenderer renderer = (ScatterXYZRenderer) plot.getRenderer();
@@ -218,11 +233,10 @@ public class Visualizer  extends JFrame
      */
     public static Chart3D createLineChart(CategoryDataset3D dataset) {
         Chart3D chart = Chart3DFactory.createLineChart(
-                "Here are some lines", 
-                "made randomly", dataset, null, null, 
-                "description");
+                "Density functions","", dataset, null, null, 
+                "Density");
         CategoryPlot3D plot = (CategoryPlot3D) chart.getPlot();
-        plot.setDimensions(new Dimension3D(18, 8, 4));
+       // plot.setDimensions(new Dimension3D(18, 8, 4));
         plot.getRowAxis().setVisible(false);
         NumberAxis3D valueAxis = (NumberAxis3D) plot.getValueAxis();
         valueAxis.setTickSelector(new NumberTickSelector(true));

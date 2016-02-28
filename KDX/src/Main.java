@@ -49,7 +49,7 @@ public class Main {
 	    {
 	    	F.add(points.get(i));
 	    }
-	    Visualizer.AddPointSet(F, "Fitting Points");
+	    Visualizer.AddPointSet(F, "Fitting Positions");
 	    
 
 	    

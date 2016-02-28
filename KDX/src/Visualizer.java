@@ -34,6 +34,7 @@ import com.orsoncharts.graphics3d.swing.DisplayPanel3D;
 import com.orsoncharts.label.StandardXYZLabelGenerator;
 import com.orsoncharts.plot.CategoryPlot3D;
 import com.orsoncharts.plot.XYZPlot;
+import com.orsoncharts.renderer.category.CategoryRenderer3D;
 import com.orsoncharts.renderer.category.StackedBarRenderer3D;
 import com.orsoncharts.renderer.category.StandardCategoryColorSource;
 import com.orsoncharts.renderer.xyz.ScatterXYZRenderer;
@@ -177,8 +178,7 @@ public class Visualizer  extends JFrame
         	series.put(xPos, val);
         }
         
-        
-         ((StandardCategoryDataset3D) linedataset).addSeriesAsRow(title, series);
+        ((StandardCategoryDataset3D) linedataset).addSeriesAsRow(title, point.time, series);   
     }
 
     
@@ -190,8 +190,8 @@ public class Visualizer  extends JFrame
      * @return A scatter chart. 
      */
     public static Chart3D createScatterChart(XYZDataset dataset) {
-        Chart3D chart = Chart3DFactory.createScatterChart("KDX Demo", 
-                "Data Points", dataset, "X", "Density", "Time");
+        Chart3D chart = Chart3DFactory.createScatterChart("Data Points", 
+                null, dataset, "X", "Density", "Time");
         XYZPlot plot = (XYZPlot) chart.getPlot();
         //plot.setDimensions(new Dimension3D(10.0, 4.0, 4.0));
         plot.setLegendLabelGenerator(new StandardXYZLabelGenerator(
@@ -213,16 +213,19 @@ public class Visualizer  extends JFrame
      */
     public static Chart3D createLineChart(CategoryDataset3D dataset) {
         Chart3D chart = Chart3DFactory.createLineChart(
-                "Density functions","", dataset, null, null, 
+                "Density functions of Fitting Positions",null, dataset, "Time", null,  
                 "Density");
         CategoryPlot3D plot = (CategoryPlot3D) chart.getPlot();
        // plot.setDimensions(new Dimension3D(18, 8, 4));
-        plot.getRowAxis().setVisible(false);
+        plot.getRowAxis().setVisible(true);
         plot.getColumnAxis().setVisible(false);
+
         
         NumberAxis3D valueAxis = (NumberAxis3D) plot.getValueAxis();
         valueAxis.setTickSelector(new NumberTickSelector(true));
-        plot.getRenderer().setColors(Colors.createFancyDarkColors());
+        CategoryRenderer3D renderer = plot.getRenderer();
+        renderer.setColors(Colors.createFancyDarkColors());
+       
         chart.setViewPoint(ViewPoint3D.createAboveLeftViewPoint(40));
         return chart;    
     }

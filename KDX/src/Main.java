@@ -75,30 +75,30 @@ public class Main {
 		
 		//read in data
 		int row = 0;
+		String s = "points: ";
 		try
 		{
 		Cell cell = sheet.getCell(0,0);
 		while(!cell.getContents().isEmpty())  //each row is a DataPoint
 		{
 			DataPoint point = new DataPoint();
-			System.out.println("new data point");
 			for(int column = 0; column<DataPoint.DIMENSIONS+1; column++)  //each row is a parameter
 			{
 				cell = sheet.getCell(column, row);
 				CellType type = cell.getType();
 				double zahl = Double.parseDouble(cell.getContents());
 				
-				if(column == DataPoint.TIME_COLUMN)
+				if(column != DataPoint.TIME_COLUMN)
 				{
-					//set time
-					point.SetTime(zahl);
-					System.out.println("adding time: " + zahl);
+					//set next attribute value
+					point.AddData(zahl);
+					s += zahl;
 				}
 				else
 				{ 
-					//set next attribute value
-					point.AddData(zahl);
-					System.out.println("adding value:" + zahl);
+					//set time
+					point.SetTime(zahl);
+					s += ", t=" + zahl + "; ";
 				}
 				
 			}
@@ -108,19 +108,19 @@ public class Main {
 		}
 		catch(java.lang.ArrayIndexOutOfBoundsException e){};
 		
-		System.out.println(points.size() + " points found in " + dataPath);
-		
+		System.out.println(s);
 	}
 	
 	private static ArrayList<DataPoint> GeneratePseudoPoints(int num)
 	{
 		ArrayList<DataPoint> mu = new ArrayList<>();
+		String s = "pseudo points: ";
 		for(int i=0; i<num; i++)
 		{
 			DataPoint pPoint = new DataPoint();
 			pPoint.SetTime(1);  //TODO: change?
 			
-			String s = "new pseudo point: ";
+			
 			//distribute equally in each dimension
 			for(int d=0; d<DataPoint.DIMENSIONS; d++)
 			{
@@ -128,12 +128,11 @@ public class Main {
 				double step = diff/(double)(num-1);  //if n=5  step = 25
 				double pseudoValue = DataPoint.minValues[d] + step*i;  //points at 0, 25, 50, 75, 100
 				pPoint.AddData(pseudoValue); 
-				s += pseudoValue + "; ";
+				s += pseudoValue + ", t=" + pPoint.time + "; ";
 			}
 			mu.add(pPoint);
-			System.out.println(s);
-			
 		}
+		System.out.println(s);
 		return mu;
 	}
 	
@@ -147,24 +146,23 @@ public class Main {
 		{
 			num = points.size(); //max as many as real points
 		}
+		String s = "fitting positions: ";
 		for(int i=0; i<num; i++)
 		{
 			DataPoint pPoint = new DataPoint();
-		
-			String s = "new fitting position at time: ";
-			//distribute equally in time
+
+			//distribute equally in time  //TODO: how to select time for fitting positions?
 			double diff = DataPoint.maxTime - DataPoint.minTime;  
 			double step = diff/(double)(num-1);  
 			double time = DataPoint.minTime + step*i;  
 			pPoint.SetTime(time); 
-			s += time + "; ";
-			
 			pPoint.values = points.get(i).values;  //just copy the position of a real point
 			
-			F.add(pPoint);
-			System.out.println(s);
+			s += pPoint.values[0] + ", t=" + time + "; ";
 			
+			F.add(pPoint);
 		}
+		System.out.println(s);
 	    return F;
 	}
 	
@@ -354,7 +352,7 @@ public class Main {
 
 	    for (int i = 0; i < regressionParameters.length; i++) {
 	        double regressionParameter = regressionParameters[i];
-	        System.out.println(i + " " + regressionParameter);
+	        System.out.println("beta[" + i  + "] = " + regressionParameter);
 	    }
 	    
 	    if(regressionParameters.length != (m-1)*O+1)

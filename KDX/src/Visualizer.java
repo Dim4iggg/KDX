@@ -180,27 +180,6 @@ public class Visualizer  extends JFrame
         
          ((StandardCategoryDataset3D) linedataset).addSeriesAsRow(title, series);
     }
-    
-    public static XYZDataset createScatterDataset() {
-        XYZSeries s1 = createRandomSeries("S1", 15);
-        XYZSeries s2 = createRandomSeries("S2", 50);
-        XYZSeries s3 = createRandomSeries("S3", 150);
-        XYZSeriesCollection dataset = new XYZSeriesCollection();
-        dataset.add(s1);
-        dataset.add(s2);
-        dataset.add(s3);
-        return dataset;
-    }
-    
-    private static XYZSeries createRandomSeries(String name, int count) {
-        XYZSeries s = new XYZSeries(name);
-        for (int i = 0; i < count; i++) {
-            s.add(Math.random() * 100, Math.random() / 100, Math.random() * 100);
-        }
-        return s;
-    }
-    
-    
 
     
     /**
@@ -217,10 +196,11 @@ public class Visualizer  extends JFrame
         //plot.setDimensions(new Dimension3D(10.0, 4.0, 4.0));
         plot.setLegendLabelGenerator(new StandardXYZLabelGenerator(
                 StandardXYZLabelGenerator.COUNT_TEMPLATE));
+        plot.getZAxis().setInverted(true);
         ScatterXYZRenderer renderer = (ScatterXYZRenderer) plot.getRenderer();
         renderer.setSize(0.15);
         renderer.setColors(Colors.createIntenseColors());
-        chart.setViewPoint(ViewPoint3D.createAboveLeftViewPoint(40));
+        chart.setViewPoint(ViewPoint3D.createAboveLeftViewPoint(30));
         return chart;
     }
     
@@ -238,10 +218,12 @@ public class Visualizer  extends JFrame
         CategoryPlot3D plot = (CategoryPlot3D) chart.getPlot();
        // plot.setDimensions(new Dimension3D(18, 8, 4));
         plot.getRowAxis().setVisible(false);
+        plot.getColumnAxis().setVisible(false);
+        
         NumberAxis3D valueAxis = (NumberAxis3D) plot.getValueAxis();
         valueAxis.setTickSelector(new NumberTickSelector(true));
         plot.getRenderer().setColors(Colors.createFancyDarkColors());
-        chart.setViewPoint(ViewPoint3D.createAboveViewPoint(30));
+        chart.setViewPoint(ViewPoint3D.createAboveLeftViewPoint(40));
         return chart;    
     }
 }

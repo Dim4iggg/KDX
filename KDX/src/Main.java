@@ -40,12 +40,12 @@ public class Main {
 	    //Visualizer.AddPointSet(points, "Sample Points");
 	    
 	    //generate equally distributed pseudo points (eg 5 points)
-	    ArrayList<DataPoint> Mu = GeneratePseudoPoints(5);
+	    ArrayList<DataPoint> Mu = GeneratePseudoPoints(2);
 	    //Visualizer.AddPointSet(Mu, "Pseudo Points");
 	    
 	    //chose F from S  (eg. every second point) -> here every point! F=S
 	    //combine the locations of a subset of the historical instances in S with a set of different time points
-	    ArrayList<DataPoint> F = GenerateFittingPositions(5);
+	    ArrayList<DataPoint> F = GenerateFittingPositions(4);
 	    //Visualizer.AddPointSet(F, "Fitting Positions");
 	    
 	    //visualize data
@@ -191,7 +191,7 @@ public class Main {
 			//k is a (N × 1)-vector that is obtained by spatiotemporal
 			//density estimation for the N fitting positions !using the sample S!
 			//as reference instances and pre-tuned spatial and temporal bandwidths.
-			k[j] =  KDE(F.get(j).values, spatialBWidth, temporalBWidth , S);
+			k[j] =  KDE(F.get(j).values, spatialBWidth, temporalBWidth , S);  
 			
 			System.out.println( "k[" + j + "] = " + k[j]);
 			//add density line to visualization
@@ -219,11 +219,15 @@ public class Main {
 		for(int j=0; j<N; j++)
 		{
 			p[j] = k[j] - K[j][m];
-			for(int i=0; i< (m-1); i++)
+			for(int i=0; i< m; i++)  //TODO: check im pseudocode steht m-1!
 			{
 				for(int o=0; o<O; o++)
 				{
 					P[j][i+o*(m-1)] = (K[j][i+o*m] - K[j][m+o*m])* Math.pow(F.get(j).time, o);
+					if(P[j][i+o*(m-1)] == 0)
+					{
+						int a=0;
+					}
 				}
 			}
 		}
@@ -240,8 +244,8 @@ public class Main {
 		}
 		
 		//TODO: REMOVE! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-		if(true)
-			return k;
+	//	if(true)
+		//	return k;
 		//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		
 		

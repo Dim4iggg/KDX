@@ -44,14 +44,9 @@ public class Main {
 	    Visualizer.AddPointSet(Mu, "Pseudo Points");
 	    
 	    //chose F from S  (eg. every second point) -> here every point! F=S
-	    ArrayList<DataPoint> F = new ArrayList<>();
-	    for(int i=0; i<points.size(); i+=2)
-	    {
-	    	F.add(points.get(i));
-	    }
+	    //combine the locations of a subset of the historical instances in S with a set of different time points
+	    ArrayList<DataPoint> F = GenerateFittingPositions(5);
 	    Visualizer.AddPointSet(F, "Fitting Positions");
-	    
-
 	    
 	    //visualize data
 	    try {
@@ -140,6 +135,37 @@ public class Main {
 			
 		}
 		return mu;
+	}
+	
+	private static ArrayList<DataPoint> GenerateFittingPositions(int num)
+	{
+		//a set F of N !historical! (!IN THE PAST!), spatio-temporal fitting positions
+		//combine the locations of a subset of the historical instances in S with a set of different time points.
+		ArrayList<DataPoint> F = new ArrayList<>();
+		
+		if(num > points.size())
+		{
+			num = points.size(); //max as many as real points
+		}
+		for(int i=0; i<num; i++)
+		{
+			DataPoint pPoint = new DataPoint();
+		
+			String s = "new fitting position at time: ";
+			//distribute equally in time
+			double diff = DataPoint.maxTime - DataPoint.minTime;  //eg 100
+			double step = diff/(double)(num-1);  //if n=5  step = 25
+			double time = DataPoint.minTime + step*i;  //points at 0, 25, 50, 75, 100
+			pPoint.SetTime(time); 
+			s += time + "; ";
+			
+			pPoint.values = points.get(i).values;  //just copy the position of a real point
+			
+			F.add(pPoint);
+			System.out.println(s);
+			
+		}
+	    return F;
 	}
 	
 	private static double[] FitKDX(ArrayList<DataPoint> S, ArrayList<DataPoint> F, ArrayList<DataPoint> Mu, double[][] spatialBWidth, double[][] temporalBWidth , int O)
@@ -268,8 +294,6 @@ public class Main {
 		
 		return summand;
 	}
-	
-	
 	
 	private static double XSquare(double[] xValues, double[] muValues)
 	{

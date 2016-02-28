@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+
+
 
 public class DataPoint {
 	
@@ -7,6 +10,8 @@ public class DataPoint {
 	public static double[] minValues;
 	public static double[] maxValues;
 	 
+	public static double minTime = Double.MAX_VALUE;
+	public static double maxTime = 0;
 	
 	public double time;
 	public double[] values;
@@ -26,7 +31,6 @@ public class DataPoint {
 		    	minValues[i] = Double.MAX_VALUE;
 		    	maxValues[i] = Double.MIN_VALUE;
 		    }
-		    
 		}
 		
 	}
@@ -45,7 +49,7 @@ public class DataPoint {
 		{
 			maxValues[indexFilled] = data;
 		}
-		
+
 		this.values[indexFilled] = data;
 		indexFilled++;
 		return true;
@@ -55,6 +59,16 @@ public class DataPoint {
 	{
 		if(time<0)
 			return false;
+		
+		if(time < DataPoint.minTime)
+		{
+			DataPoint.minTime = time;
+		}
+		if(time > DataPoint.maxTime)
+		{
+			DataPoint.maxTime = time;
+		}
+		
 		
 		this.time = time;
 		return true;

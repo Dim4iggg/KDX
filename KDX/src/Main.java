@@ -17,16 +17,14 @@ import jxl.write.Number;
 public class Main {
 
 	private static ArrayList<DataPoint> points;
-	
-	
 	private static String dataPath = "Eingabewerte.xls";
-			
+	
+	private static int NUM_PSEUDOPOINTS = 2;
+	private static int NUM_FITTINGPOS = 5;
+	private static int O = 2;
 			
 	public static void main(String[] args) {
-		
-		
-        
-		
+	
 	    points  = new ArrayList<>();
 	    
 	  //read in data
@@ -40,12 +38,12 @@ public class Main {
 	    //Visualizer.AddPointSet(points, "Sample Points");
 	    
 	    //generate equally distributed pseudo points (eg 5 points)
-	    ArrayList<DataPoint> Mu = GeneratePseudoPoints(2);
+	    ArrayList<DataPoint> Mu = GeneratePseudoPoints();
 	    //Visualizer.AddPointSet(Mu, "Pseudo Points");
 	    
 	    //chose F from S  (eg. every second point) -> here every point! F=S
 	    //combine the locations of a subset of the historical instances in S with a set of different time points
-	    ArrayList<DataPoint> F = GenerateFittingPositions(4);
+	    ArrayList<DataPoint> F = GenerateFittingPositions();
 	    //Visualizer.AddPointSet(F, "Fitting Positions");
 	    
 	    //visualize data
@@ -57,7 +55,7 @@ public class Main {
 		}
 	    
 	    
-	    FitKDX(points, F, Mu, new double[10][10], new double[3][3] , 2);
+	    FitKDX(points, F, Mu, new double[10][10], new double[3][3]);
 	    
 	    Visualizer app = new Visualizer(
                 "KDX", Visualizer.PLOTTYPE.SCATTER);
@@ -111,11 +109,11 @@ public class Main {
 		System.out.println(s);
 	}
 	
-	private static ArrayList<DataPoint> GeneratePseudoPoints(int num)
+	private static ArrayList<DataPoint> GeneratePseudoPoints()
 	{
 		ArrayList<DataPoint> mu = new ArrayList<>();
 		String s = "pseudo points: ";
-		for(int i=0; i<num; i++)
+		for(int i=0; i<NUM_PSEUDOPOINTS; i++)
 		{
 			DataPoint pPoint = new DataPoint();
 			pPoint.SetTime(1);  //TODO: change?
@@ -125,7 +123,7 @@ public class Main {
 			for(int d=0; d<DataPoint.DIMENSIONS; d++)
 			{
 				double diff = DataPoint.maxValues[d] - DataPoint.minValues[d];  //eg 100
-				double step = diff/(double)(num-1);  //if n=5  step = 25
+				double step = diff/(double)(NUM_PSEUDOPOINTS-1);  //if n=5  step = 25
 				double pseudoValue = DataPoint.minValues[d] + step*i;  //points at 0, 25, 50, 75, 100
 				pPoint.AddData(pseudoValue); 
 				s += pseudoValue + ", t=" + pPoint.time + "; ";
@@ -136,24 +134,24 @@ public class Main {
 		return mu;
 	}
 	
-	private static ArrayList<DataPoint> GenerateFittingPositions(int num)
+	private static ArrayList<DataPoint> GenerateFittingPositions()
 	{
 		//a set F of N !historical! (!IN THE PAST!), spatio-temporal fitting positions
 		//combine the locations of a subset of the historical instances in S with a set of different time points.
 		ArrayList<DataPoint> F = new ArrayList<>();
 		
-		if(num > points.size())
+		if(NUM_FITTINGPOS > points.size())
 		{
-			num = points.size(); //max as many as real points
+			NUM_FITTINGPOS = points.size(); //max as many as real points
 		}
 		String s = "fitting positions: ";
-		for(int i=0; i<num; i++)
+		for(int i=0; i<NUM_FITTINGPOS; i++)
 		{
 			DataPoint pPoint = new DataPoint();
 
 			//distribute equally in time  //TODO: how to select time for fitting positions?
 			double diff = DataPoint.maxTime - DataPoint.minTime;  
-			double step = diff/(double)(num-1);  
+			double step = diff/(double)(NUM_FITTINGPOS-1);  
 			double time = DataPoint.minTime + step*i;  
 			pPoint.SetTime(time); 
 			pPoint.values = points.get(i).values;  //just copy the position of a real point
@@ -166,7 +164,7 @@ public class Main {
 	    return F;
 	}
 	
-	private static double[] FitKDX(ArrayList<DataPoint> S, ArrayList<DataPoint> F, ArrayList<DataPoint> Mu, double[][] spatialBWidth, double[][] temporalBWidth , int O)
+	private static double[] FitKDX(ArrayList<DataPoint> S, ArrayList<DataPoint> F, ArrayList<DataPoint> Mu, double[][] spatialBWidth, double[][] temporalBWidth)
 	{
 		int n = S.size();
 		int N = F.size();
@@ -273,6 +271,8 @@ public class Main {
 				}
 			}
 		}
+		
+		//TODO: draw area using alpha, and mu 
 		
 		return alpha; 
 	}

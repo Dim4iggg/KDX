@@ -17,12 +17,18 @@ import jxl.write.Number;
 public class Main {
 
 	private static ArrayList<DataPoint> points;
+	private static ArrayList<DataPoint> Mu;
+	private static ArrayList<DataPoint> F;
+	
 	private static String dataPath = "Eingabewerte.xls";
 	
 	private static int NUM_PSEUDOPOINTS = 2;
-	private static int NUM_FITTINGPOS = 5;
+	private static int NUM_FITTINGPOS = 10;
 	private static int O = 2;
 			
+	private static double[] alpha;
+	private static double[][] spatialBWidth;
+	
 	public static void main(String[] args) {
 	
 	    points  = new ArrayList<>();
@@ -38,12 +44,12 @@ public class Main {
 	    //Visualizer.AddPointSet(points, "Sample Points");
 	    
 	    //generate equally distributed pseudo points (eg 5 points)
-	    ArrayList<DataPoint> Mu = GeneratePseudoPoints();
+	    Mu = GeneratePseudoPoints();
 	    //Visualizer.AddPointSet(Mu, "Pseudo Points");
 	    
 	    //chose F from S  (eg. every second point) -> here every point! F=S
 	    //combine the locations of a subset of the historical instances in S with a set of different time points
-	    ArrayList<DataPoint> F = GenerateFittingPositions();
+	    F = GenerateFittingPositions();
 	    //Visualizer.AddPointSet(F, "Fitting Positions");
 	    
 	    //visualize data
@@ -54,11 +60,12 @@ public class Main {
 			e.printStackTrace();
 		}
 	    
+	    spatialBWidth = new double[10][10];
 	    
-	    FitKDX(points, F, Mu, new double[10][10], new double[3][3]);
+	    FitKDX(points, F, Mu, spatialBWidth, new double[3][3]);
 	    
 	    Visualizer app = new Visualizer(
-                "KDX", Visualizer.PLOTTYPE.SCATTER);
+                "KDX", Visualizer.PLOTTYPE.ALL);
         app.pack();
         app.setVisible(true);
         
@@ -249,7 +256,7 @@ public class Main {
 		//double[] beta = new double[(m-1)*O+1];
 		double[] beta = Regress(P, p, m, O);
 
-		double[] alpha = new double[m*(O+1)]; //TODO: check size of alpha
+		alpha = new double[m*(O+1)]; //TODO: check size of alpha
 		//reconstruct regression coefficient of alpha
 		for(int o=0; o<O; o++)
 		{
@@ -276,14 +283,7 @@ public class Main {
 		
 		return alpha; 
 	}
-	
-	private static double SpatioTemporalDensity(int N, double[] pointValues, double pointTime, double[][] spatialBWidth, double[][] temporalBWidth , ArrayList<DataPoint> S)
-	{
-		//TODO: k berechnen wie?
-		double k = 0;		
-		return k;
-	}
-	
+
 	public static double KDE(double[] pointValues, double[][] spatialBWidth, double[][] temporalBWidth , ArrayList<DataPoint> S)
 	{
 		double k = 0;
@@ -363,5 +363,21 @@ public class Main {
 		return regressionParameters;
 	}
 
-	
+	public static double Extrapolation(double[] xValues, double time)
+	{
+		double f = 0;
+		
+		for(int m=0; m<Mu.size(); m++)
+		{
+			double mult = 0;
+			for(int o=0; o<O; o++)
+			{
+				mult += alpha[Mu.size()*o+m] * Math.pow(time, o);
+			}
+			f += mult * GaussianSpatialDensityKernel(xValues, Mu.get(m).values, spatialBWidth);	
+		}
+
+		
+		return f;
+	}
 }

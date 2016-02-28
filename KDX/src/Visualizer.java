@@ -11,18 +11,24 @@ import com.orsoncharts.Chart3D;
 import com.orsoncharts.Chart3DFactory;
 import com.orsoncharts.Chart3DPanel;
 import com.orsoncharts.Colors;
+import com.orsoncharts.Range;
+import com.orsoncharts.axis.LabelOrientation;
 import com.orsoncharts.axis.NumberAxis3D;
 import com.orsoncharts.axis.NumberTickSelector;
+import com.orsoncharts.axis.StandardCategoryAxis3D;
+import com.orsoncharts.axis.ValueAxis3D;
 import com.orsoncharts.data.Dataset3D;
 import com.orsoncharts.data.DefaultKeyedValues;
 import com.orsoncharts.data.KeyedValues;
 import com.orsoncharts.data.category.CategoryDataset3D;
 import com.orsoncharts.data.category.StandardCategoryDataset3D;
+import com.orsoncharts.data.function.Function3D;
 import com.orsoncharts.data.xyz.XYZDataset;
 import com.orsoncharts.data.xyz.XYZSeries;
 import com.orsoncharts.data.xyz.XYZSeriesCollection;
 import com.orsoncharts.demo.LineChart3D1;
 import com.orsoncharts.demo.ScatterPlot3D1;
+import com.orsoncharts.demo.SurfaceRenderer1;
 import com.orsoncharts.demo.swing.DemoPanel;
 import com.orsoncharts.demo.swing.ExitOnClose;
 import com.orsoncharts.demo.swing.OrsonChartsDemo;
@@ -34,10 +40,13 @@ import com.orsoncharts.graphics3d.swing.DisplayPanel3D;
 import com.orsoncharts.label.StandardXYZLabelGenerator;
 import com.orsoncharts.plot.CategoryPlot3D;
 import com.orsoncharts.plot.XYZPlot;
+import com.orsoncharts.renderer.GradientColorScale;
+import com.orsoncharts.renderer.category.AreaRenderer3D;
 import com.orsoncharts.renderer.category.CategoryRenderer3D;
 import com.orsoncharts.renderer.category.StackedBarRenderer3D;
 import com.orsoncharts.renderer.category.StandardCategoryColorSource;
 import com.orsoncharts.renderer.xyz.ScatterXYZRenderer;
+import com.orsoncharts.renderer.xyz.SurfaceRenderer;
 
 
 
@@ -51,6 +60,7 @@ public class Visualizer  extends JFrame
 	
 	static XYZSeriesCollection scatterdataset = null;
 	static CategoryDataset3D linedataset = null;
+	static CategoryDataset3D areadataset = null;
 	
     public Visualizer(String title, PLOTTYPE ptype) {
         super(title);
@@ -89,6 +99,17 @@ public class Visualizer  extends JFrame
         lineChartPanel.zoomToFit(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
         linePanel.add(new DisplayPanel3D(lineChartPanel ,false, false));
         
+        //prepare area plot  
+        DemoPanel areaPanel = new DemoPanel(new BorderLayout());
+        areaPanel.setPreferredSize(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
+        Chart3D areachart = Visualizer.createChart();
+        
+        Chart3DPanel areaChartPanel = new Chart3DPanel(areachart);
+        areaPanel.setChartPanel(areaChartPanel);
+        areaChartPanel.zoomToFit(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
+        areaPanel.add(new DisplayPanel3D(areaChartPanel ,false, false));
+        
+        
         //add panels 
         switch (ptype) 
         {
@@ -98,6 +119,9 @@ public class Visualizer  extends JFrame
         	break;
            
         case AREA:
+        	
+        	
+        	mainPanel.add(areaPanel);
         	break;
         	
         case SCATTER:
@@ -105,9 +129,9 @@ public class Visualizer  extends JFrame
             break;
             
         case ALL:
-
         	mainPanel.add(scatterPanel);
-            mainPanel.add(linePanel);
+           // mainPanel.add(linePanel);
+            mainPanel.add(areaPanel);
             break;   
         }
 
@@ -244,7 +268,7 @@ public class Visualizer  extends JFrame
          scatterdataset.add(s);
     }
     
-    
+  
     /**
      * Creates a scatter chart based on the supplied dataset.
      * 
@@ -256,6 +280,7 @@ public class Visualizer  extends JFrame
         Chart3D chart = Chart3DFactory.createScatterChart("Data Points", 
                 null, dataset, "X", "Density", "Time");
         XYZPlot plot = (XYZPlot) chart.getPlot();
+      
         //plot.setDimensions(new Dimension3D(10.0, 4.0, 4.0));
         plot.setLegendLabelGenerator(new StandardXYZLabelGenerator(
                 StandardXYZLabelGenerator.COUNT_TEMPLATE));
@@ -290,6 +315,39 @@ public class Visualizer  extends JFrame
         renderer.setColors(Colors.createFancyDarkColors());
        
         chart.setViewPoint(ViewPoint3D.createAboveLeftViewPoint(40));
+        return chart;    
+    }
+
+    public static Chart3D createChart() 
+    {
+        Function3D function = new Function3D() 
+        {
+            @Override
+            public double getValue(double x, double z) 
+            {
+            	double[] d = {x};
+            	
+                return Main.Extrapolation(d, z);
+            }
+        };
+        
+        Chart3D chart = Chart3DFactory.createSurfaceChart(
+                "Extrapolation Surface", 
+                "", 
+                function, "X", "Density", "Time");
+ 
+        XYZPlot plot = (XYZPlot) chart.getPlot();
+       // plot.setDimensions(new Dimension3D(10, 5, 10));
+        ValueAxis3D xAxis = plot.getXAxis();
+        xAxis.setRange(-Math.PI, Math.PI);
+        ValueAxis3D zAxis = plot.getZAxis();
+        zAxis.setInverted(true);
+        zAxis.setRange(0, 5);
+        
+        SurfaceRenderer renderer = (SurfaceRenderer) plot.getRenderer();
+        renderer.setDrawFaceOutlines(false);
+        //renderer.setColorScale(new GradientColorScale(new Range(-1.0, 1.0),  Color.RED, Color.YELLOW));
+        chart.setViewPoint(ViewPoint3D.createAboveLeftViewPoint(30));
         return chart;    
     }
 }

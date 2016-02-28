@@ -322,10 +322,28 @@ public class Main {
 	private static double[] Regress(double[][] P, double[] p, int m, int O)
 	{
 		
-		//double[] beta = new double[(m-1)*O+1];
+		//double[] beta = new double[(m-1)*(O+1)];
 		
 		OLSMultipleLinearRegression regression2 = new OLSMultipleLinearRegression();
 	    regression2.setNoIntercept(true);
+	    
+	 /*   double[] a = {
+	            2.6,
+	            1.6,
+	            4.0,
+	            3.0,
+	            4.9
+	    };
+	    double[][] b =
+	            {
+	                    { 1, 1.2 },
+	                    { 1, 3.0  },
+	                    { 1, 4.5  },
+	                    { 1, 5.8  },
+	                    { 1, 7.2  },
+	            };
+	    */
+	    
 	    regression2.newSampleData(p, P);
 
 	    double[] regressionParameters = regression2.estimateRegressionParameters();

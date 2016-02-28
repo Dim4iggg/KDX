@@ -37,16 +37,16 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	    Visualizer.AddPointSet(points, "Sample Points");
+	    //Visualizer.AddPointSet(points, "Sample Points");
 	    
 	    //generate equally distributed pseudo points (eg 5 points)
 	    ArrayList<DataPoint> Mu = GeneratePseudoPoints(5);
-	    Visualizer.AddPointSet(Mu, "Pseudo Points");
+	    //Visualizer.AddPointSet(Mu, "Pseudo Points");
 	    
 	    //chose F from S  (eg. every second point) -> here every point! F=S
 	    //combine the locations of a subset of the historical instances in S with a set of different time points
 	    ArrayList<DataPoint> F = GenerateFittingPositions(5);
-	    Visualizer.AddPointSet(F, "Fitting Positions");
+	    //Visualizer.AddPointSet(F, "Fitting Positions");
 	    
 	    //visualize data
 	    try {
@@ -60,7 +60,7 @@ public class Main {
 	    FitKDX(points, F, Mu, new double[10][10], new double[3][3] , 2);
 	    
 	    Visualizer app = new Visualizer(
-                "KDX", Visualizer.PLOTTYPE.ALL);
+                "KDX", Visualizer.PLOTTYPE.SCATTER);
         app.pack();
         app.setVisible(true);
         
@@ -118,7 +118,7 @@ public class Main {
 		for(int i=0; i<num; i++)
 		{
 			DataPoint pPoint = new DataPoint();
-			pPoint.SetTime(0);  //TODO: change?
+			pPoint.SetTime(1);  //TODO: change?
 			
 			String s = "new pseudo point: ";
 			//distribute equally in each dimension
@@ -153,9 +153,9 @@ public class Main {
 		
 			String s = "new fitting position at time: ";
 			//distribute equally in time
-			double diff = DataPoint.maxTime - DataPoint.minTime;  //eg 100
-			double step = diff/(double)(num-1);  //if n=5  step = 25
-			double time = DataPoint.minTime + step*i;  //points at 0, 25, 50, 75, 100
+			double diff = DataPoint.maxTime - DataPoint.minTime;  
+			double step = diff/(double)(num-1);  
+			double time = DataPoint.minTime + step*i;  
 			pPoint.SetTime(time); 
 			s += time + "; ";
 			
@@ -177,22 +177,33 @@ public class Main {
 		double[] k = new double[N];
 		double[][] K = new double[N][m*(O+1)];
 		
+		int e=1;
+		for(DataPoint p: S)
+		{
+			Visualizer.AddDensityLineSet(p,GaussianSpatialDensityKernel(p.values, p.values, spatialBWidth), "", spatialBWidth, 0);
+			Visualizer.AddDensityLinePoint(p, GaussianSpatialDensityKernel(p.values, p.values, spatialBWidth), "S"+e, spatialBWidth,0);
+			e++;
+		}
+		
 		//get historic density estimates
 		for(int j = 0; j<N; j++)
 		{
-			 //k[j] =  KDE(F.get(j).values, spatialBWidth, temporalBWidth , S);
-			//apply gaussian density function for each point
-			k[j] = GaussianSpatialDensityKernel(F.get(j).values, F.get(j).values, spatialBWidth);
+			//k is a (N × 1)-vector that is obtained by spatiotemporal
+			//density estimation for the N fitting positions !using the sample S!
+			//as reference instances and pre-tuned spatial and temporal bandwidths.
+			k[j] =  KDE(F.get(j).values, spatialBWidth, temporalBWidth , S);
+			
 			System.out.println( "k[" + j + "] = " + k[j]);
 			//add density line to visualization
-			Visualizer.AddDensityLineSet(F.get(j),k[j], j+"s point", spatialBWidth);
+			//Visualizer.AddDensityLineSet(F.get(j),k[j], j+"s point", spatialBWidth, 1);
+			Visualizer.AddDensityLinePoint(F.get(j), k[j], "F"+j, spatialBWidth,1);
+			
 			
 			//for each pseudo point compute its density with a kernel 
 			// as the sum of gaussian densities of neighboring sample points
 			for(int i=0; i<m; i++)
 			{
 				double kernel = GaussianSpatialDensityKernel(F.get(j).values, Mu.get(i).values, spatialBWidth);
-				
 				
 				for(int o=0; o<O; o++)
 				{
@@ -273,7 +284,6 @@ public class Main {
 	
 	public static double KDE(double[] pointValues, double[][] spatialBWidth, double[][] temporalBWidth , ArrayList<DataPoint> S)
 	{
-		//TODO: k berechnen wie?
 		double k = 0;
 		
 		for(int s=0; s<S.size(); s++)
@@ -288,7 +298,6 @@ public class Main {
 			
 	public static double GaussianSpatialDensityKernel(double[] xValues, double[] muValues, double[][] spatialBWidth)
 	{
-
 		//TODO: wie wird die bandbreite angegeben - SUMi - was genau bedeutet sie?
 		double summand = Math.pow((2*Math.PI), - (double)DataPoint.DIMENSIONS/2)* Math.pow(spatialBWidth.length, -0.5)* Math.exp(-0.5 * XSquare(xValues, muValues)); 
 		

@@ -11,7 +11,7 @@ public class DataPoint {
 	public static double[] maxValues;
 	 
 	public static double minTime = Double.MAX_VALUE;
-	public static double maxTime = 0;
+	public static double maxTime = Double.MIN_VALUE;
 	
 	public double time;
 	public double[] values;

@@ -131,7 +131,7 @@ public class Visualizer  extends JFrame
          scatterdataset.add(s);
     }
 
-    public static void AddDensityLineSet(DataPoint point, double density, String title, double[][] spatialBWidth)
+    public static void AddDensityLineSet(DataPoint point, double density, String title, double[][] spatialBWidth,int numRefs )
     {
     	if(linedataset == null)
     	{
@@ -140,7 +140,15 @@ public class Visualizer  extends JFrame
     	
     	
     	DefaultKeyedValues<Double> series = new DefaultKeyedValues<Double>();
-    	int numRefs = 5;
+    	
+    	if(numRefs <=0)
+    		numRefs = 10;
+    	else if(numRefs == 1) //point
+    	{
+        	series.put(point.values[0], density);
+    		((StandardCategoryDataset3D) linedataset).addSeriesAsRow(title, point.time, series);   
+    		return;
+    	}
 
         // 5 points "left" from the sample point
         for(int i= numRefs-1;  i>0; i--)
@@ -153,7 +161,7 @@ public class Visualizer  extends JFrame
         	}
         	
         	//move in 1st dimension left //TODO: change to the dimension that is shown
-        	double xPos = lpoint[0] - 0.1*(i+1);
+        	double xPos = lpoint[0] - 0.5*(i+1);
         	lpoint[0] = xPos;
         	double val = Main.GaussianSpatialDensityKernel(point.values, lpoint, spatialBWidth);
         	series.put(xPos, val);
@@ -172,7 +180,7 @@ public class Visualizer  extends JFrame
         	}
         	
         	//move in 1st dimension right //TODO: change to the dimension that is shown
-        	double xPos = rpoint[0] + 0.1*(i+1);
+        	double xPos = rpoint[0] + 0.5*(i+1);
         	rpoint[0] = xPos;
         	double val = Main.GaussianSpatialDensityKernel(point.values, rpoint, spatialBWidth);
         	series.put(xPos, val);
@@ -181,6 +189,61 @@ public class Visualizer  extends JFrame
         ((StandardCategoryDataset3D) linedataset).addSeriesAsRow(title, point.time, series);   
     }
 
+    public static void AddDensityLinePoint(DataPoint point, double density, String title, double[][] spatialBWidth,int numRefs )
+    {
+    	if(scatterdataset == null)
+    	{
+    		scatterdataset = new XYZSeriesCollection();
+    	}
+    	 XYZSeries s = new XYZSeries(title);
+    	 
+    	 if(numRefs <=0)
+     		numRefs = 50;
+     	else if(numRefs == 1) //point
+     	{
+     		s.add(point.values[0], density, point.time);
+     		 scatterdataset.add(s);   
+     		return;
+     	}
+    	 
+    	// 5 points "left" from the sample point
+         for(int i= numRefs-1;  i>0; i--)
+         {
+         	//copy all values
+         	double[] lpoint =  new double[point.values.length];
+         	for(int j =0; j<lpoint.length; j++)
+         	{
+         		lpoint[j] = point.values[j];
+         	}
+         	
+         	//move in 1st dimension left //TODO: change to the dimension that is shown
+         	double xPos = lpoint[0] - 0.05*(i+1);
+         	lpoint[0] = xPos;
+         	double val = Main.GaussianSpatialDensityKernel(point.values, lpoint, spatialBWidth);
+         	s.add(xPos, val, point.time);
+         } 
+         
+         s.add(point.values[0], density, point.time);
+         
+         // 5 points "right" from the sample point
+         for(int i= 0; i<numRefs; i++)
+         {
+         	//copy all values
+         	double[] rpoint =  new double[point.values.length];
+         	for(int j =0; j<rpoint.length; j++)
+         	{
+         		rpoint[j] = point.values[j];
+         	}
+         	
+         	//move in 1st dimension right //TODO: change to the dimension that is shown
+         	double xPos = rpoint[0] + 0.05*(i+1);
+         	rpoint[0] = xPos;
+         	double val = Main.GaussianSpatialDensityKernel(point.values, rpoint, spatialBWidth);
+         	s.add(xPos, val, point.time);
+         }
+         scatterdataset.add(s);
+    }
+    
     
     /**
      * Creates a scatter chart based on the supplied dataset.
@@ -218,7 +281,7 @@ public class Visualizer  extends JFrame
         CategoryPlot3D plot = (CategoryPlot3D) chart.getPlot();
        // plot.setDimensions(new Dimension3D(18, 8, 4));
         plot.getRowAxis().setVisible(true);
-        plot.getColumnAxis().setVisible(false);
+        plot.getColumnAxis().setVisible(true);
 
         
         NumberAxis3D valueAxis = (NumberAxis3D) plot.getValueAxis();

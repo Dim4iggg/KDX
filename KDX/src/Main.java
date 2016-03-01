@@ -22,8 +22,9 @@ public class Main {
 	
 	private static String dataPath = "Eingabewerte.xls";
 	
+	//this many pseudo points will be added at FIXED positions in EVERY time -> num points * num times
 	private static int NUM_PSEUDOPOINTS = 2;
-	private static int NUM_FITTINGPOS = 10;
+	private static int NUM_FITTINGPOS = 16;
 	private static int O = 2;
 			
 	private static double[] alpha;
@@ -41,7 +42,10 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	    //Visualizer.AddPointSet(points, "Sample Points");
+	    
+	    spatialBWidth = new double[10][10];//TODO: what to put in this matrix?
+	    
+	    
 	    
 	    //generate equally distributed pseudo points (eg 5 points)
 	    Mu = GeneratePseudoPoints();
@@ -60,7 +64,7 @@ public class Main {
 			e.printStackTrace();
 		}
 	    
-	    spatialBWidth = new double[10][10];
+	    
 	    
 	    FitKDX(points, F, Mu, spatialBWidth, new double[3][3]);
 	    
@@ -120,22 +124,28 @@ public class Main {
 	{
 		ArrayList<DataPoint> mu = new ArrayList<>();
 		String s = "pseudo points: ";
-		for(int i=0; i<NUM_PSEUDOPOINTS; i++)
+		for(int i=0; i<NUM_PSEUDOPOINTS; i++)    
 		{
-			DataPoint pPoint = new DataPoint();
-			pPoint.SetTime(1);  //TODO: change?
-			
-			
-			//distribute equally in each dimension
-			for(int d=0; d<DataPoint.DIMENSIONS; d++)
+			//copy the points at the same position for each time step (in the past)
+			for(int t=0; t<DataPoint.timePoints.size(); t++)
 			{
-				double diff = DataPoint.maxValues[d] - DataPoint.minValues[d];  //eg 100
-				double step = diff/(double)(NUM_PSEUDOPOINTS-1);  //if n=5  step = 25
-				double pseudoValue = DataPoint.minValues[d] + step*i;  //points at 0, 25, 50, 75, 100
-				pPoint.AddData(pseudoValue); 
-				s += pseudoValue + ", t=" + pPoint.time + "; ";
+				DataPoint pPoint = new DataPoint();
+				pPoint.SetTime(DataPoint.timePoints.get(t));  
+				
+				//distribute equally in each dimension
+				for(int d=0; d<DataPoint.DIMENSIONS; d++)
+				{
+					double diff = DataPoint.maxValues[d] - DataPoint.minValues[d];  //eg 100
+					double step = diff/(double)(NUM_PSEUDOPOINTS-1);  //if n=5  step = 25
+					double pseudoValue = DataPoint.minValues[d] + step*i;  //points at 0, 25, 50, 75, 100
+					pPoint.AddData(pseudoValue); 
+					s += pseudoValue + ", t=" + pPoint.time + "; ";
+				}
+				mu.add(pPoint);
+				
+				//add pseudo point Mu(i) to visualization
+				Visualizer.AddDensityLinePoint(pPoint, GaussianSpatialDensityKernel(pPoint.values, pPoint.values, spatialBWidth), "Mu"+i+","+t, spatialBWidth,0);
 			}
-			mu.add(pPoint);
 		}
 		System.out.println(s);
 		return mu;
@@ -147,10 +157,7 @@ public class Main {
 		//combine the locations of a subset of the historical instances in S with a set of different time points.
 		ArrayList<DataPoint> F = new ArrayList<>();
 		
-		if(NUM_FITTINGPOS > points.size())
-		{
-			NUM_FITTINGPOS = points.size(); //max as many as real points
-		}
+
 		String s = "fitting positions: ";
 		for(int i=0; i<NUM_FITTINGPOS; i++)
 		{
@@ -161,7 +168,7 @@ public class Main {
 			double step = diff/(double)(NUM_FITTINGPOS-1);  
 			double time = DataPoint.minTime + step*i;  
 			pPoint.SetTime(time); 
-			pPoint.values = points.get(i).values;  //just copy the position of a real point
+			pPoint.values = points.get(i%points.size()).values;  //just copy the position of a real point
 			
 			s += pPoint.values[0] + ", t=" + time + "; ";
 			
@@ -174,33 +181,37 @@ public class Main {
 	private static double[] FitKDX(ArrayList<DataPoint> S, ArrayList<DataPoint> F, ArrayList<DataPoint> Mu, double[][] spatialBWidth, double[][] temporalBWidth)
 	{
 		int n = S.size();
+		System.out.println("\n|S| = " + n);
+		
 		int N = F.size();
+		System.out.println("|F| = N = " + N);
+		
 		int m = Mu.size();
-		int M = (m-1)*(O+1);
+		System.out.println("|Mu| = m = " + m + "\n");
+		
 		double[] k = new double[N];
 		double[][] K = new double[N][m*(O+1)];
 		
-		int e=1;
-		for(DataPoint p: S)
+		//draw all real points and their densities
+		for(int s=0; s<S.size(); s++)
 		{
+			DataPoint p = S.get(s);
 			Visualizer.AddDensityLineSet(p,GaussianSpatialDensityKernel(p.values, p.values, spatialBWidth), "", spatialBWidth, 0);
-			Visualizer.AddDensityLinePoint(p, GaussianSpatialDensityKernel(p.values, p.values, spatialBWidth), "S"+e, spatialBWidth,0);
-			e++;
+			Visualizer.AddDensityLinePoint(p, GaussianSpatialDensityKernel(p.values, p.values, spatialBWidth), "S"+s, spatialBWidth,0);
 		}
 		
+		String kMatrix = "\n K: \n";
 		//get historic density estimates
-		for(int j = 0; j<N; j++)
+		for(int j = 0; j<N; j++)  //for all fitting positions F
 		{
 			//k is a (N × 1)-vector that is obtained by spatiotemporal
 			//density estimation for the N fitting positions !using the sample S!
 			//as reference instances and pre-tuned spatial and temporal bandwidths.
-			k[j] =  KDE(F.get(j).values, spatialBWidth, temporalBWidth , S);  
-			
+			k[j] =  KDE(F.get(j).values, spatialBWidth, temporalBWidth , S);  // TODO: why is t given as a parameter in pseudocode? 
 			System.out.println( "k[" + j + "] = " + k[j]);
-			//add density line to visualization
-			//Visualizer.AddDensityLineSet(F.get(j),k[j], j+"s point", spatialBWidth, 1);
-			Visualizer.AddDensityLinePoint(F.get(j), k[j], "F"+j, spatialBWidth,1);
 			
+			//add fitting point F(j) to visualization
+			Visualizer.AddDensityLinePoint(F.get(j), k[j], "F"+j, spatialBWidth,1);
 			
 			//for each pseudo point compute its density with a kernel 
 			// as the sum of gaussian densities of neighboring sample points
@@ -208,79 +219,92 @@ public class Main {
 			{
 				double kernel = GaussianSpatialDensityKernel(F.get(j).values, Mu.get(i).values, spatialBWidth);
 				
-				for(int o=0; o<O; o++)
+				for(int o=0; o<=O; o++)
 				{
-					K[j][i+o*m] = kernel * Math.pow(F.get(j).time, o);  //Kj,i+o·m = Ki(xj) · to j
+					//adding a random val only as a cheat to not have singular matrices, should be removed when all parameters are right
+					K[j][i+o*m] = kernel * Math.pow(F.get(j).time, o)              + Math.random();  
+					//Kj,i+o·m = Ki(xj) · To^j  --> this is the description from a line from page 5
+					//BUT in pseudocode line 6: Kj,i = SpatialDensity( xj - MUi, spatialBWidth, S) -> why xi-MUi???
+					
+					kMatrix = kMatrix + round(K[j][i+o*m], 20) + " | ";
 				}
 			}
+			kMatrix = kMatrix + "\n";
 		}
+		System.out.println(kMatrix);
+		
 		
 		double[] p = new double[N];
 		double[][] P = new double[N][(m-1) * (O+1)];
 		
+		String pMatrix = "\n P: \n";
 		//create design matrix P and corresponding vector p
 		for(int j=0; j<N; j++)
 		{
-			p[j] = k[j] - K[j][m];
-			for(int i=0; i< m; i++)  //TODO: check im pseudocode steht m-1!
+			p[j] = k[j] - K[j][m-1]; 
+			System.out.println("p[j] = " + p[j]);
+			
+			for(int o=0; o<=O; o++)
 			{
-				for(int o=0; o<O; o++)
+				for(int i=0; i< m-1; i++)  
 				{
-					P[j][i+o*(m-1)] = (K[j][i+o*m] - K[j][m+o*m])* Math.pow(F.get(j).time, o);
-					if(P[j][i+o*(m-1)] == 0)
-					{
-						int a=0;
-					}
+					P[j][i+o*(m-1)] = (K[j][i+o*m] - K[j][m-1+o*m])* Math.pow(F.get(j).time, o);
+
+					pMatrix = pMatrix + round(P[j][i+o*(m-1)], 20) + " | ";
 				}
 			}
+			pMatrix = pMatrix + "\n";
 		}
+		System.out.println(pMatrix);
 		
 		//add regularisation terms to p and P
 		for(int i=0; i<(m-1); i++)
 		{
 			for(int o=0; o<O; o++)
 			{
-				//p[N+i+o*(m-1)] = Cio; //TODO: Cio was ist das?
-				//P[N+i+o*(m-1)][i+o*(m-1)] = 0; //TODO: da fehlt etwas!
-				//P[N+i+o*(m-1)][i+o*(m-1)] = 1;
+				//P[(N-1)+i+o*(m-1)] = Cio; //TODO: Cio was ist das?  p oder P?
+				//P[(N-1)+i+o*(m-1)][i+o*(m-1)] = 0; //TODO: da fehlt etwas!  "komma punkt"
+				//P[(N-1)+i+o*(m-1)][i+o*(m-1)] = 1; //TODO: wie kann es N+etwas sein, wenn es nur ( >N<   x (m - 1)(O + 1)) gross ist?
 			}
 		}
 		
 		//TODO: REMOVE! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-	//	if(true)
+		//if(true)
 		//	return k;
-		//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//		<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		
 		
 		//fit regression coefficients
-		//double[] beta = new double[(m-1)*O+1];
 		double[] beta = Regress(P, p, m, O);
 
-		alpha = new double[m*(O+1)]; //TODO: check size of alpha
+		alpha = new double[m*(O+1)]; 
+		
 		//reconstruct regression coefficient of alpha
 		for(int o=0; o<O; o++)
 		{
 			double sum =0;
 			for(int i=0; i<m; i++)
 			{
-				if(i<m-1)
+				if(i == m-1)
 				{
-					alpha[m*o+i] = beta[i] + o * (m-1);
+					if(o==0 )
+					{
+						alpha[i] = 1 - sum; 
+						sum = 0;
+					}
+					else //o>0
+					{
+						alpha[m*o+i] = - sum;
+						sum = 0;
+					}
+				}
+				else 
+				{
+					alpha[m*o+i] = beta[i+o*(m-1)];
 					sum += alpha[m*o+i];
-				}
-				else if( o==0)
-				{
-					alpha[m*o+i] = 1 - sum;
-				}
-				else  //i = m-1 && o>0
-				{
-					alpha[m*o+i] = -sum;
 				}
 			}
 		}
-		
-		//TODO: draw area using alpha, and mu 
-		
 		return alpha; 
 	}
 
@@ -365,19 +389,40 @@ public class Main {
 
 	public static double Extrapolation(double[] xValues, double time)
 	{
-		double f = 0;
-		
-		for(int m=0; m<Mu.size(); m++)
+		double f = 0;		
+		for(int i=0; i<Mu.size(); i++)
 		{
 			double mult = 0;
-			for(int o=0; o<O; o++)
+			for(int l=0; l<O; l++)
 			{
-				mult += alpha[Mu.size()*o+m] * Math.pow(time, o);
+				double summand = alpha[Mu.size()*l+i] * Math.pow(time, l);
+				//wegen zweiten summenzeichen
+				mult = mult+summand;
 			}
-			f += mult * GaussianSpatialDensityKernel(xValues, Mu.get(m).values, spatialBWidth);	
+			//wegen ersten summenzeichen
+			f = f + (mult * GaussianSpatialDensityKernel(xValues, Mu.get(i).values, spatialBWidth));	
 		}
 
-		
 		return f;
 	}
+
+	public static double round(double value, int places) {
+	    if (places < 0) throw new IllegalArgumentException();
+
+	    long factor = (long) Math.pow(10, places);
+	    value = value * factor;
+	    long tmp = Math.round(value);
+	    return (double) tmp / factor;
+	}
 }
+
+
+
+
+
+
+
+
+
+
+

@@ -4,17 +4,30 @@ import java.util.ArrayList;
 
 public class DataPoint {
 	
+	//how many dimensions does the data have
 	public static int DIMENSIONS = 1;
+	
+	//in which column in the data is the time 
 	public static int TIME_COLUMN = 1;
 	
+	//min and max values for each dimension (ALL data)
 	public static double[] minValues;
 	public static double[] maxValues;
 	 
+	//first and last time points (of ALL data)
 	public static double minTime = Double.MAX_VALUE;
 	public static double maxTime = Double.MIN_VALUE;
 	
+	//time points found through ALL data
+	public static ArrayList<Double> timePoints;
+	
+	//time of THIS DataPoint
 	public double time;
+	
+	//values of THIS DataPoint
 	public double[] values;
+	
+	//for how many dimensions the values were read in 
 	int indexFilled = 0;
 	
 	
@@ -31,6 +44,8 @@ public class DataPoint {
 		    	minValues[i] = Double.MAX_VALUE;
 		    	maxValues[i] = Double.MIN_VALUE;
 		    }
+		    //all time points are saved to contribute the pseudo points on them
+		    timePoints = new ArrayList<Double>();
 		}
 		
 	}
@@ -69,6 +84,21 @@ public class DataPoint {
 			DataPoint.maxTime = time;
 		}
 		
+		//is this time point already saved?
+		boolean contains = false;
+		for(int i=0; i<timePoints.size(); i++)
+		{
+			if(timePoints.get(i) == time)
+			{
+				contains = true;
+				break;
+			}
+		}
+		//if not, save it
+		if(!contains)
+		{
+			timePoints.add(time);
+		}
 		
 		this.time = time;
 		return true;

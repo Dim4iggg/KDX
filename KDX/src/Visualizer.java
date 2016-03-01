@@ -99,11 +99,12 @@ public class Visualizer  extends JFrame
         lineChartPanel.zoomToFit(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
         linePanel.add(new DisplayPanel3D(lineChartPanel ,false, false));
         
+        
+        
         //prepare area plot  
         DemoPanel areaPanel = new DemoPanel(new BorderLayout());
         areaPanel.setPreferredSize(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
         Chart3D areachart = Visualizer.createChart();
-        
         Chart3DPanel areaChartPanel = new Chart3DPanel(areachart);
         areaPanel.setChartPanel(areaChartPanel);
         areaChartPanel.zoomToFit(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
@@ -264,7 +265,7 @@ public class Visualizer  extends JFrame
          	rpoint[0] = xPos;
          	double val = Main.GaussianSpatialDensityKernel(point.values, rpoint, spatialBWidth);
          	s.add(xPos, val, point.time);
-         }
+         } 
          scatterdataset.add(s);
     }
     

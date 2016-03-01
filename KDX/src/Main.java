@@ -303,6 +303,8 @@ public class Main {
 					alpha[m*o+i] = beta[i+o*(m-1)];
 					sum += alpha[m*o+i];
 				}
+				
+				System.out.print("\n alpha[m*o+i] = " + alpha[m*o+i]);
 			}
 		}
 		return alpha; 
@@ -378,12 +380,7 @@ public class Main {
 	        double regressionParameter = regressionParameters[i];
 	        System.out.println("beta[" + i  + "] = " + regressionParameter);
 	    }
-	    
-	    if(regressionParameters.length != (m-1)*O+1)
-	    {
-	    	System.out.println("wrong length of beta");
-	    }
-	    
+    
 		return regressionParameters;
 	}
 

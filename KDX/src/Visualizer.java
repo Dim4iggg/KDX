@@ -78,7 +78,7 @@ public class Visualizer  extends JFrame
      */
     public static JPanel createDemoPanel(PLOTTYPE ptype) {
     	DemoPanel mainPanel = new DemoPanel(new BorderLayout());
-    	mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+    	mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
     	mainPanel.setPreferredSize(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
         
     	//prepare scatter plot
@@ -89,7 +89,7 @@ public class Visualizer  extends JFrame
     	scatterPanel.setChartPanel(scatterChartPanel);
     	scatterChartPanel.zoomToFit(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);           
         scatterPanel.add(new DisplayPanel3D(scatterChartPanel ,false, false));
-               
+        
         //prepare line plot
         DemoPanel linePanel = new DemoPanel(new BorderLayout());
         linePanel.setPreferredSize(OrsonChartsDemo.DEFAULT_CONTENT_SIZE);
@@ -290,6 +290,7 @@ public class Visualizer  extends JFrame
         renderer.setSize(0.15);
         renderer.setColors(Colors.createIntenseColors());
         chart.setViewPoint(ViewPoint3D.createAboveLeftViewPoint(30));
+       
         return chart;
     }
     

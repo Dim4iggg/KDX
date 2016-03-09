@@ -144,7 +144,7 @@ public class Main {
 				mu.add(pPoint);
 				
 				//add pseudo point Mu(i) to visualization
-				Visualizer.AddDensityLinePoint(pPoint, GaussianSpatialDensityKernel(pPoint.values, pPoint.values, spatialBWidth), "Mu"+i+","+t, spatialBWidth,0);
+				Visualizer.AddDensityLinePoint(pPoint, GaussianSpatialDensityKernel(pPoint.values, pPoint.values, spatialBWidth), "Mu"+i+","+t, spatialBWidth,1);
 			}
 		}
 		System.out.println(s);
@@ -159,20 +159,26 @@ public class Main {
 		
 
 		String s = "fitting positions: ";
-		for(int i=0; i<NUM_FITTINGPOS; i++)
+		for(int t = 0; t< DataPoint.timePoints.size(); t++)
 		{
-			DataPoint pPoint = new DataPoint();
-
-			//distribute equally in time  //TODO: how to select time for fitting positions?
-			double diff = DataPoint.maxTime - DataPoint.minTime;  
-			double step = diff/(double)(NUM_FITTINGPOS-1);  
-			double time = DataPoint.minTime + step*i;  
-			pPoint.SetTime(time); 
-			pPoint.values = points.get(i%points.size()).values;  //just copy the position of a real point
-			
-			s += pPoint.values[0] + ", t=" + time + "; ";
-			
-			F.add(pPoint);
+			for(int i=0; i<NUM_FITTINGPOS; i++)
+			{ 
+				double time = DataPoint.timePoints.get(t);  
+				
+				DataPoint pPoint = new DataPoint();
+				pPoint.SetTime(time); 
+				
+				//distribute equally in each dimension
+				for(int d=0; d<DataPoint.DIMENSIONS; d++)
+				{
+					double diff = DataPoint.maxValues[d] - DataPoint.minValues[d];  //eg 100
+					double step = diff/(double)(NUM_FITTINGPOS-1);  //if n=5  step = 25
+					double pseudoValue = DataPoint.minValues[d] + step*i;  //points at 0, 25, 50, 75, 100
+					pPoint.AddData(pseudoValue); 
+					s += pseudoValue + ", t=" + pPoint.time + "; ";
+				}				
+				F.add(pPoint);
+			}
 		}
 		System.out.println(s);
 	    return F;
@@ -207,7 +213,7 @@ public class Main {
 			//k is a (N × 1)-vector that is obtained by spatiotemporal
 			//density estimation for the N fitting positions !using the sample S!
 			//as reference instances and pre-tuned spatial and temporal bandwidths.
-			k[j] =  KDE(F.get(j).values, spatialBWidth, temporalBWidth , S);  // TODO: why is t given as a parameter in pseudocode? 
+			k[j] =  KDE(F.get(j), spatialBWidth, temporalBWidth , S);  // TODO: why is t given as a parameter in pseudocode? 
 			System.out.println( "k[" + j + "] = " + k[j]);
 			
 			//add fitting point F(j) to visualization
@@ -217,12 +223,16 @@ public class Main {
 			// as the sum of gaussian densities of neighboring sample points
 			for(int i=0; i<m; i++)
 			{
-				double kernel = GaussianSpatialDensityKernel(F.get(j).values, Mu.get(i).values, spatialBWidth);
+				//double kernel = GaussianSpatialDensityKernel(F.get(j).values, Mu.get(i).values, spatialBWidth);
+				double kernel = GaussianSpatialDensityKernel(Mu.get(i).values, Mu.get(i).values, spatialBWidth);
 				
 				for(int o=0; o<=O; o++)
 				{
+					K[j][i+o*m] = kernel * Math.pow(F.get(j).time, o);
+					
 					//adding a random val only as a cheat to not have singular matrices, should be removed when all parameters are right
-					K[j][i+o*m] = kernel * Math.pow(F.get(j).time, o)              + Math.random();  
+					K[j][i+o*m] += Math.random(); 
+					
 					//Kj,i+o·m = Ki(xj) · To^j  --> this is the description from a line from page 5
 					//BUT in pseudocode line 6: Kj,i = SpatialDensity( xj - MUi, spatialBWidth, S) -> why xi-MUi???
 					
@@ -310,16 +320,22 @@ public class Main {
 		return alpha; 
 	}
 
-	public static double KDE(double[] pointValues, double[][] spatialBWidth, double[][] temporalBWidth , ArrayList<DataPoint> S)
+	public static double KDE(DataPoint f, double[][] spatialBWidth, double[][] temporalBWidth , ArrayList<DataPoint> S)
 	{
+		double[] pointValues = f.values;
+		double time = f.time;
 		double k = 0;
 		
 		for(int s=0; s<S.size(); s++)
 		{
-			k += GaussianSpatialDensityKernel(pointValues, S.get(s).values, spatialBWidth);
+			if(Math.abs(time - S.get(s).time)< 0.5)
+			{
+				double value = GaussianSpatialDensityKernel(S.get(s).values, pointValues, spatialBWidth);
+				k = k+value;
+			}
 		}
 		
-		k = k/S.size();   //kernel density estimation, see aggarwal
+		//k = k/S.size();   //kernel density estimation, see aggarwal
 		
 		return k;
 	}		

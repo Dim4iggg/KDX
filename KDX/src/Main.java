@@ -20,11 +20,11 @@ public class Main {
 	private static ArrayList<DataPoint> Mu;
 	private static ArrayList<DataPoint> F;
 	
-	private static String dataPath = "Eingabewerte.xls";
+	private static String dataPath = "Eingabewerte2.xls";
 	
 	//this many pseudo points will be added at FIXED positions in EVERY time -> num points * num times
 	private static int NUM_PSEUDOPOINTS = 2;
-	private static int NUM_FITTINGPOS = 16;
+	private static int NUM_FITTINGPOS = 10;
 	private static int O = 2;
 			
 	private static double[] alpha;
@@ -42,6 +42,8 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	    
+	  //  DO(0,0);
 	    
 	    spatialBWidth = new double[10][10];//TODO: what to put in this matrix?
 	    
@@ -124,10 +126,10 @@ public class Main {
 	{
 		ArrayList<DataPoint> mu = new ArrayList<>();
 		String s = "pseudo points: ";
-		for(int i=0; i<NUM_PSEUDOPOINTS; i++)    
+		//copy the points at the same position for each time step (in the past)
+		for(int t=0; t<DataPoint.timePoints.size(); t++)
 		{
-			//copy the points at the same position for each time step (in the past)
-			for(int t=0; t<DataPoint.timePoints.size(); t++)
+			for(int i=0; i<NUM_PSEUDOPOINTS; i++)    
 			{
 				DataPoint pPoint = new DataPoint();
 				pPoint.SetTime(DataPoint.timePoints.get(t));  
@@ -171,9 +173,9 @@ public class Main {
 				//distribute equally in each dimension
 				for(int d=0; d<DataPoint.DIMENSIONS; d++)
 				{
-					double diff = DataPoint.maxValues[d] - DataPoint.minValues[d];  //eg 100
+					double diff = DataPoint.maxValues[d] - DataPoint.minValues[d] +2;  //eg 100
 					double step = diff/(double)(NUM_FITTINGPOS-1);  //if n=5  step = 25
-					double pseudoValue = DataPoint.minValues[d] + step*i;  //points at 0, 25, 50, 75, 100
+					double pseudoValue = DataPoint.minValues[d]-1 + step*i;  //points at 0, 25, 50, 75, 100
 					pPoint.AddData(pseudoValue); 
 					s += pseudoValue + ", t=" + pPoint.time + "; ";
 				}				
@@ -196,7 +198,7 @@ public class Main {
 		System.out.println("|Mu| = m = " + m + "\n");
 		
 		double[] k = new double[N];
-		double[][] K = new double[N][m*(O+1)];
+		double[][] K = new double[N][m*(O+1)];   //>< N/DataPoint.timePoints.size()
 		
 		//draw all real points and their densities
 		for(int s=0; s<S.size(); s++)
@@ -224,25 +226,41 @@ public class Main {
 			for(int i=0; i<m; i++)
 			{
 				//double kernel = GaussianSpatialDensityKernel(F.get(j).values, Mu.get(i).values, spatialBWidth);
-				double kernel = GaussianSpatialDensityKernel(Mu.get(i).values, Mu.get(i).values, spatialBWidth);
+				double kernel = GaussianSpatialDensityKernel( F.get(j).values, Mu.get(i).values, spatialBWidth); //>< if time same
 				
 				for(int o=0; o<=O; o++)
 				{
-					K[j][i+o*m] = kernel * Math.pow(F.get(j).time, o);
-					
+					int a = i+o*m;
+					if(Mu.get(i).time == F.get(j).time)
+						K[j][i+o*m] = kernel * Math.pow(Mu.get(i).time, o);
+					//else
 					//adding a random val only as a cheat to not have singular matrices, should be removed when all parameters are right
-					K[j][i+o*m] += Math.random(); 
+						//K[j][i+o*m] += 0.000001; 
 					
 					//Kj,i+o·m = Ki(xj) · To^j  --> this is the description from a line from page 5
 					//BUT in pseudocode line 6: Kj,i = SpatialDensity( xj - MUi, spatialBWidth, S) -> why xi-MUi???
 					
-					kMatrix = kMatrix + round(K[j][i+o*m], 20) + " | ";
+					kMatrix = kMatrix + round(K[j][i+o*m], 3) + " | ";
 				}
 			}
 			kMatrix = kMatrix + "\n";
 		}
 		System.out.println(kMatrix);
 		
+		
+		String h ="";
+		for(int z=0; z<K.length; z++)
+		{
+		for(int w=0; w< K[0].length; w++)
+		{
+			
+			
+				h += round(K[z][w], 3) + " | ";
+			}
+			h+="\n";
+		}
+		System.out.println("K = \n" + h);	
+			
 		
 		double[] p = new double[N];
 		double[][] P = new double[N][(m-1) * (O+1)];
@@ -258,7 +276,10 @@ public class Main {
 			{
 				for(int i=0; i< m-1; i++)  
 				{
-					P[j][i+o*(m-1)] = (K[j][i+o*m] - K[j][m-1+o*m])* Math.pow(F.get(j).time, o);
+					double q = (K[j][i+o*m] - K[j][m-1+o*m])* Math.pow(F.get(j).time, o);
+					P[j][i+o*(m-1)] = q;
+					//if(P[j][i+o*(m-1)] == 0)
+					//	P[j][i+o*(m-1)] += 0.0000001; 
 
 					pMatrix = pMatrix + round(P[j][i+o*(m-1)], 20) + " | ";
 				}
@@ -270,9 +291,9 @@ public class Main {
 		//add regularisation terms to p and P
 		for(int i=0; i<(m-1); i++)
 		{
-			for(int o=0; o<O; o++)
+			for(int o=0; o<=O; o++)
 			{
-				//P[(N-1)+i+o*(m-1)] = Cio; //TODO: Cio was ist das?  p oder P?
+				//P[(N-1)+i+o*(m-1)] = 1; //TODO: Cio was ist das?  p oder P?
 				//P[(N-1)+i+o*(m-1)][i+o*(m-1)] = 0; //TODO: da fehlt etwas!  "komma punkt"
 				//P[(N-1)+i+o*(m-1)][i+o*(m-1)] = 1; //TODO: wie kann es N+etwas sein, wenn es nur ( >N<   x (m - 1)(O + 1)) gross ist?
 			}
@@ -285,12 +306,12 @@ public class Main {
 		
 		
 		//fit regression coefficients
-		double[] beta = Regress(P, p, m, O);
+		double[] beta = Regress(P, p, O);
 
 		alpha = new double[m*(O+1)]; 
 		
 		//reconstruct regression coefficient of alpha
-		for(int o=0; o<O; o++)
+		for(int o=0; o<=O; o++)
 		{
 			double sum =0;
 			for(int i=0; i<m; i++)
@@ -363,7 +384,7 @@ public class Main {
 		return sum;		
 	}
 	
-	private static double[] Regress(double[][] P, double[] p, int m, int O)
+	private static double[] Regress(double[][] P, double[] p,  int O)
 	{
 		
 		//double[] beta = new double[(m-1)*(O+1)];
@@ -427,6 +448,27 @@ public class Main {
 	    long tmp = Math.round(value);
 	    return (double) tmp / factor;
 	}
+
+	public static double DO(double x, double z)
+	{
+		 double[] k = {
+		            1,
+		           2,
+		           3
+		    };
+		    double[][] K =
+		            {
+		                    { 0.33,   0.66  },
+		                    { 0.5,  0.5  },
+		                    { 0.66,  0.33  }
+		            };
+		    
+		    double[] a = Regress(K, k, 3);
+
+		    
+		return 1;
+	}
+
 }
 
 

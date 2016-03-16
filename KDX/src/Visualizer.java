@@ -341,10 +341,15 @@ public class Visualizer  extends JFrame
         XYZPlot plot = (XYZPlot) chart.getPlot();
        // plot.setDimensions(new Dimension3D(10, 5, 10));
         ValueAxis3D xAxis = plot.getXAxis();
-        xAxis.setRange(-Math.PI, Math.PI);
+        //xAxis.setRange(-Math.PI, Math.PI);
+        xAxis.setRange(-3, 11);
+        
+       // ValueAxis3D yAxis = plot.getYAxis();
+       // yAxis.setRange(-0.5, 3);
+        
         ValueAxis3D zAxis = plot.getZAxis();
         zAxis.setInverted(true);
-        zAxis.setRange(0, 5);
+        zAxis.setRange(0, 4);
         
         SurfaceRenderer renderer = (SurfaceRenderer) plot.getRenderer();
         renderer.setDrawFaceOutlines(false);

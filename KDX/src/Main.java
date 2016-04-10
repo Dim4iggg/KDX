@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.stat.regression.*;
 
 import jxl.Cell;
@@ -24,7 +25,7 @@ public class Main {
 	
 	//this many pseudo points will be added at FIXED positions in EVERY time -> num points * num times
 	private static int NUM_PSEUDOPOINTS = 2;
-	private static int NUM_FITTINGPOS = 10;
+	private static int NUM_FITTINGPOS = 7;
 	private static int O = 2;
 			
 	private static double[] alpha;
@@ -45,8 +46,14 @@ public class Main {
 	    
 	  //  DO(0,0);
 	    
-	    spatialBWidth = new double[10][10];//TODO: what to put in this matrix?
-	    
+	    spatialBWidth = new double[DataPoint.DIMENSIONS][DataPoint.DIMENSIONS];//TODO: what to put in this matrix?
+	    for(int i=0; i< spatialBWidth.length; i++)
+	    {
+	    	 for(int j=0; j< spatialBWidth[0].length; j++)
+	    	 {
+	    		 spatialBWidth[i][j] = 3;
+	    	 }
+	    }
 	    
 	    
 	    //generate equally distributed pseudo points (eg 5 points)
@@ -68,12 +75,13 @@ public class Main {
 	    
 	    
 	    
-	    FitKDX(points, F, Mu, spatialBWidth, new double[3][3]);
+	    FitKDX(points, F, Mu, spatialBWidth, new double[10][10]);
 	    
 	    Visualizer app = new Visualizer(
                 "KDX", Visualizer.PLOTTYPE.ALL);
         app.pack();
         app.setVisible(true);
+
         
 	}
 
@@ -102,7 +110,7 @@ public class Main {
 				if(column != DataPoint.TIME_COLUMN)
 				{
 					//set next attribute value
-					point.AddData(zahl);
+					point.AddData(zahl, true);
 					s += zahl;
 				}
 				else
@@ -137,10 +145,10 @@ public class Main {
 				//distribute equally in each dimension
 				for(int d=0; d<DataPoint.DIMENSIONS; d++)
 				{
-					double diff = DataPoint.maxValues[d] - DataPoint.minValues[d];  //eg 100
+					double diff = DataPoint.maxValues[d] - DataPoint.minValues[d] ;  //eg 100
 					double step = diff/(double)(NUM_PSEUDOPOINTS-1);  //if n=5  step = 25
-					double pseudoValue = DataPoint.minValues[d] + step*i;  //points at 0, 25, 50, 75, 100
-					pPoint.AddData(pseudoValue); 
+					double pseudoValue = DataPoint.minValues[d] + step*i ;  //points at 0, 25, 50, 75, 100
+					pPoint.AddData(pseudoValue,false ); 
 					s += pseudoValue + ", t=" + pPoint.time + "; ";
 				}
 				mu.add(pPoint);
@@ -159,7 +167,6 @@ public class Main {
 		//combine the locations of a subset of the historical instances in S with a set of different time points.
 		ArrayList<DataPoint> F = new ArrayList<>();
 		
-
 		String s = "fitting positions: ";
 		for(int t = 0; t< DataPoint.timePoints.size(); t++)
 		{
@@ -176,7 +183,7 @@ public class Main {
 					double diff = DataPoint.maxValues[d] - DataPoint.minValues[d] +2;  //eg 100
 					double step = diff/(double)(NUM_FITTINGPOS-1);  //if n=5  step = 25
 					double pseudoValue = DataPoint.minValues[d]-1 + step*i;  //points at 0, 25, 50, 75, 100
-					pPoint.AddData(pseudoValue); 
+					pPoint.AddData(pseudoValue, false); 
 					s += pseudoValue + ", t=" + pPoint.time + "; ";
 				}				
 				F.add(pPoint);
@@ -215,7 +222,7 @@ public class Main {
 			//k is a (N × 1)-vector that is obtained by spatiotemporal
 			//density estimation for the N fitting positions !using the sample S!
 			//as reference instances and pre-tuned spatial and temporal bandwidths.
-			k[j] =  KDE(F.get(j), spatialBWidth, temporalBWidth , S);  // TODO: why is t given as a parameter in pseudocode? 
+			k[j] =  KDE(F.get(j), spatialBWidth , S);  // TODO: why is t given as a parameter in pseudocode? 
 			System.out.println( "k[" + j + "] = " + k[j]);
 			
 			//add fitting point F(j) to visualization
@@ -245,16 +252,14 @@ public class Main {
 			}
 			kMatrix = kMatrix + "\n";
 		}
-		System.out.println(kMatrix);
+		//System.out.println(kMatrix);
 		
 		
 		String h ="";
 		for(int z=0; z<K.length; z++)
 		{
-		for(int w=0; w< K[0].length; w++)
-		{
-			
-			
+			for(int w=0; w< K[0].length; w++)
+			{
 				h += round(K[z][w], 3) + " | ";
 			}
 			h+="\n";
@@ -281,24 +286,51 @@ public class Main {
 					//if(P[j][i+o*(m-1)] == 0)
 					//	P[j][i+o*(m-1)] += 0.0000001; 
 
-					pMatrix = pMatrix + round(P[j][i+o*(m-1)], 20) + " | ";
+					pMatrix = pMatrix + round(P[j][i+o*(m-1)], 3) + " | ";
 				}
 			}
 			pMatrix = pMatrix + "\n";
 		}
-		System.out.println(pMatrix);
+		//System.out.println(pMatrix);
 		
 		//add regularisation terms to p and P
 		for(int i=0; i<(m-1); i++)
 		{
-			for(int o=0; o<=O; o++)
+			//for(int j=0; j<N; j++)
 			{
-				//P[(N-1)+i+o*(m-1)] = 1; //TODO: Cio was ist das?  p oder P?
-				//P[(N-1)+i+o*(m-1)][i+o*(m-1)] = 0; //TODO: da fehlt etwas!  "komma punkt"
-				//P[(N-1)+i+o*(m-1)][i+o*(m-1)] = 1; //TODO: wie kann es N+etwas sein, wenn es nur ( >N<   x (m - 1)(O + 1)) gross ist?
+				for(int o=0; o<=O; o++)
+				{
+					//p[(N/DataPoint.timePoints.size()-1)+i+o*(m-1)] = 3; //TODO: Cio was ist das?  p oder P?
+					if( (i+o*(m-1))% ((N/DataPoint.timePoints.size() -1)+i+o*(m-1)) == 0) //diagonal
+					//if( j!=0 && (j/(N)) == i )
+					{
+						//P[(N/DataPoint.timePoints.size() -1)+i+o*(m-1)][i+o*(m-1)] = 1; //set diagonal element to 1
+						//P[j][i+o*(m-1)] = 5;
+					}
+					else
+					{
+						//P[(N/DataPoint.timePoints.size()-1)+i+o*(m-1)][i+o*(m-1)] = 0; //set row to zero
+						//P[j][i+o*(m-1)] = 8;
+					}
+				}	
 			}
 		}
 		
+		String g ="";
+		for(int z=0; z<P.length; z++)
+		{
+			for(int w=0; w< P[0].length; w++)
+			{
+				g += round(P[z][w], 3) + " | ";
+			}
+			g+="\n";
+		}
+		System.out.println("P = \n" + g);
+		
+		for(int z=0; z<p.length; z++)
+		{
+			System.out.println("p[]" + p[z]);
+		}
 		//TODO: REMOVE! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 		//if(true)
 		//	return k;
@@ -341,7 +373,7 @@ public class Main {
 		return alpha; 
 	}
 
-	public static double KDE(DataPoint f, double[][] spatialBWidth, double[][] temporalBWidth , ArrayList<DataPoint> S)
+	public static double KDE(DataPoint f, double[][] spatialBWidth, ArrayList<DataPoint> S)
 	{
 		double[] pointValues = f.values;
 		double time = f.time;
@@ -364,21 +396,29 @@ public class Main {
 	public static double GaussianSpatialDensityKernel(double[] xValues, double[] muValues, double[][] spatialBWidth)
 	{
 		//TODO: wie wird die bandbreite angegeben - SUMi - was genau bedeutet sie?
-		double summand = Math.pow((2*Math.PI), - (double)DataPoint.DIMENSIONS/2)* Math.pow(spatialBWidth.length, -0.5)* Math.exp(-0.5 * XSquare(xValues, muValues)); 
+		double summand = Math.pow((2*Math.PI), - (double)DataPoint.DIMENSIONS/2)* Math.pow(spatialBWidth.length, -0.5)* Math.exp(-0.5 * XSquare(xValues, muValues, spatialBWidth)); 
 		
 		return summand;
 	}
 	
-	private static double XSquare(double[] xValues, double[] muValues)
+	private static double XSquare(double[] xValues, double[] muValues, double[][] spatialBWidth)
 	{
 		//(x - mui)*(x - mui)
 		double[] dif = new double[xValues.length];
 		double sum = 0;
-		
+
+	
+        
 		for(int i=0; i<xValues.length; i++)
 		{
+			double s = 0;
+			
 			dif[i] = xValues[i] - muValues[i];
-			sum += dif[i]*dif[i];
+			for(int j=0; j < spatialBWidth[0].length; j++ )
+			{
+				s += spatialBWidth[i][j];
+			}
+			sum += dif[i]* s * dif[i];
 		}
 		
 		return sum;		
@@ -390,7 +430,12 @@ public class Main {
 		//double[] beta = new double[(m-1)*(O+1)];
 		
 		OLSMultipleLinearRegression regression2 = new OLSMultipleLinearRegression();
-	    regression2.setNoIntercept(true);
+	    regression2.setNoIntercept(false);
+	   
+	    MLRegression regression = new MLRegression(P, p);
+	    
+	   MillerUpdatingRegression regression3 = new MillerUpdatingRegression(P[0].length, false, 0.01);
+	    regression3.addObservations(P, p);
 	    
 	 /*   double[] a = {
 	            2.6,
@@ -410,31 +455,59 @@ public class Main {
 	    */
 	    
 	    regression2.newSampleData(p, P);
-
+	    //regression3.addObservations(P, p);
+	    
+	    double[] regressionParameters3 = new double[P[0].length];
+	    for(int i =0 ; i<P[0].length; i++)
+	    {
+	    	regressionParameters3[i] = regression.beta.get(i,0);
+	    }
+	    
 	    double[] regressionParameters = regression2.estimateRegressionParameters();
 
-	    for (int i = 0; i < regressionParameters.length; i++) {
-	        double regressionParameter = regressionParameters[i];
+	    for (int i = 0; i < regressionParameters3.length; i++) {
+	        double regressionParameter = regressionParameters3[i];
 	        System.out.println("beta[" + i  + "] = " + regressionParameter);
 	    }
     
-		return regressionParameters;
+	    check(P, p, regressionParameters3);
+	    
+		return regressionParameters3;
 	}
 
+	
+	private static void check(double[][] P, double[] p, double[] b)
+	{
+		for(int i=0; i< b.length; i++)
+		{
+			double summand = 0;
+			for(int j=0; j< P[0].length; j++)
+			{
+				summand = summand + P[i][j]*b[i];
+			}
+			
+			double abw = p[i] - summand;
+			System.out.println("abweichung ["+i+"] = " +abw);
+		}
+	}
+	
 	public static double Extrapolation(double[] xValues, double time)
 	{
 		double f = 0;		
 		for(int i=0; i<Mu.size(); i++)
 		{
 			double mult = 0;
-			for(int l=0; l<O; l++)
-			{
-				double summand = alpha[Mu.size()*l+i] * Math.pow(time, l);
-				//wegen zweiten summenzeichen
-				mult = mult+summand;
-			}
+			//if( Math.abs((Mu.get(i).time-time))<= 1)
+			//{				
+				for(int l=0; l<O; l++)
+				{					
+					double summand = alpha[Mu.size()*l+i] * Math.pow(time, l);
+					//wegen zweiten summenzeichen
+					mult = mult+summand;
+				}			
 			//wegen ersten summenzeichen
 			f = f + (mult * GaussianSpatialDensityKernel(xValues, Mu.get(i).values, spatialBWidth));	
+			//}
 		}
 
 		return f;
@@ -465,6 +538,8 @@ public class Main {
 		    
 		    double[] a = Regress(K, k, 3);
 
+		 
+		check(K, k, a);   
 		    
 		return 1;
 	}

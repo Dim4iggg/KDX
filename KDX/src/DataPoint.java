@@ -50,21 +50,25 @@ public class DataPoint {
 		
 	}
 	
-	public boolean AddData(double data)
+	public boolean AddData(double data, boolean updateValBoundaries)
 	{
 		if(indexFilled >= DIMENSIONS)
 			return false;
-		//new min value
-		if(data < minValues[indexFilled])
+		
+		if(updateValBoundaries)
 		{
-			minValues[indexFilled] = data;
+			//new min value
+			if(data < minValues[indexFilled])
+			{
+				minValues[indexFilled] = data;
+			}
+			//new max value
+			if(data > maxValues[indexFilled])
+			{
+				maxValues[indexFilled] = data;
+			}
 		}
-		//new max value
-		if(data > maxValues[indexFilled])
-		{
-			maxValues[indexFilled] = data;
-		}
-
+		
 		this.values[indexFilled] = data;
 		indexFilled++;
 		return true;

@@ -349,7 +349,8 @@ public class Visualizer  extends JFrame
         
         ValueAxis3D zAxis = plot.getZAxis();
         zAxis.setInverted(true);
-        zAxis.setRange(0, 4);
+        zAxis.setRange(1, 5);
+        
         
         SurfaceRenderer renderer = (SurfaceRenderer) plot.getRenderer();
         renderer.setDrawFaceOutlines(false);

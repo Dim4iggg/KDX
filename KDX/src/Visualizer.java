@@ -329,7 +329,8 @@ public class Visualizer  extends JFrame
             {
             	double[] d = {x};
             	
-                return Main.Extrapolation(d, z);
+                //return KDX.Extrapolation(d, z);
+            	return KDX.Extra(d, z);
             }
         };
         

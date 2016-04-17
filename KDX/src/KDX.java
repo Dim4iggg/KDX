@@ -15,7 +15,7 @@ import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.Number;
 
-public class Main {
+public class KDX {
 
 	private static ArrayList<DataPoint> points;
 	private static ArrayList<DataPoint> Mu;
@@ -24,9 +24,9 @@ public class Main {
 	private static String dataPath = "Eingabewerte2.xls";
 	
 	//this many pseudo points will be added at FIXED positions in EVERY time -> num points * num times
-	private static int NUM_PSEUDOPOINTS = 2;
-	private static int NUM_FITTINGPOS = 7;
-	private static int O = 2;
+	private static int NUM_PSEUDOPOINTS = 10;
+	private static int NUM_FITTINGPOS = 6;
+	private static int O = 5;
 			
 	private static double regWeight = 1;
 	
@@ -48,12 +48,14 @@ public class Main {
 	    
 	  //  DO(0,0);
 	    
+	    //identity matrix
 	    spatialBWidth = new double[DataPoint.DIMENSIONS][DataPoint.DIMENSIONS];//TODO: what to put in this matrix?
 	    for(int i=0; i< spatialBWidth.length; i++)
 	    {
 	    	 for(int j=0; j< spatialBWidth[0].length; j++)
 	    	 {
-	    		 spatialBWidth[i][j] = 1;
+	    		 if(i==j)
+	    			 spatialBWidth[i][j] = 1;
 	    	 }
 	    }
 	    
@@ -65,7 +67,7 @@ public class Main {
 	    //chose F from S  (eg. every second point) -> here every point! F=S
 	    //combine the locations of a subset of the historical instances in S with a set of different time points
 	    F = GenerateFittingPositions();
-	    //Visualizer.AddPointSet(F, "Fitting Positions");
+	    F = points;
 	    
 	    //visualize data
 	    try {
@@ -77,7 +79,7 @@ public class Main {
 	    
 	    
 	    
-	    FitKDX(points, F, Mu, spatialBWidth, new double[10][10]);
+	    FitKDX(F, Mu, spatialBWidth, new double[10][10]);
 	    
 	    Visualizer app = new Visualizer(
                 "KDX", Visualizer.PLOTTYPE.ALL);
@@ -137,12 +139,14 @@ public class Main {
 		ArrayList<DataPoint> mu = new ArrayList<>();
 		String s = "pseudo points: ";
 		//copy the points at the same position for each time step (in the past)
-		for(int t=0; t<DataPoint.timePoints.size(); t++)
+		//for(int t=0; t<DataPoint.timePoints.size(); t++)
 		{
 			for(int i=0; i<NUM_PSEUDOPOINTS; i++)    
 			{
 				DataPoint pPoint = new DataPoint();
-				pPoint.SetTime(DataPoint.timePoints.get(t));  
+				//pPoint.SetTime(DataPoint.timePoints.get(1)); 
+				pPoint.SetTime(DataPoint.timePoints.get((int)(Math.random()*DataPoint.timePoints.size()))); 
+				
 				
 				//distribute equally in each dimension
 				for(int d=0; d<DataPoint.DIMENSIONS; d++)
@@ -156,7 +160,7 @@ public class Main {
 				mu.add(pPoint);
 				
 				//add pseudo point Mu(i) to visualization
-				Visualizer.AddDensityLinePoint(pPoint, GaussianSpatialDensityKernel(pPoint.values, pPoint.values, spatialBWidth), "Mu"+i+","+t, spatialBWidth,1);
+				Visualizer.AddDensityLinePoint(pPoint, GaussianSpatialDensityKernel(pPoint.values, pPoint.values, spatialBWidth), "Mu"+i, spatialBWidth,1);
 			}
 		}
 		System.out.println(s);
@@ -195,10 +199,10 @@ public class Main {
 	    return F;
 	}
 	
-	private static double[] FitKDX(ArrayList<DataPoint> S, ArrayList<DataPoint> F, ArrayList<DataPoint> Mu, double[][] spatialBWidth, double[][] temporalBWidth)
+	private static double[] FitKDX( ArrayList<DataPoint> F, ArrayList<DataPoint> Mu, double[][] spatialBWidth, double[][] temporalBWidth)
 	{
-		int n = S.size();
-		System.out.println("\n|S| = " + n);
+		//int n = S.size();
+		//System.out.println("\n|S| = " + n);
 		
 		int N = F.size();
 		System.out.println("|F| = N = " + N);
@@ -207,55 +211,48 @@ public class Main {
 		System.out.println("|Mu| = m = " + m + "\n");
 		
 		double[] k = new double[N];
-		double[][] K = new double[N][m*(O+1)];   //>< N/DataPoint.timePoints.size()
+		double[][] K = new double[N][m];   
 		
-		//draw all real points and their densities
-		for(int s=0; s<S.size(); s++)
-		{
-			DataPoint p = S.get(s);
-			Visualizer.AddDensityLineSet(p,GaussianSpatialDensityKernel(p.values, p.values, spatialBWidth), "", spatialBWidth, 0);
-			Visualizer.AddDensityLinePoint(p, GaussianSpatialDensityKernel(p.values, p.values, spatialBWidth), "S"+s, spatialBWidth,0);
-		}
 		
 		String kMatrix = "\n K: \n";
-		//get historic density estimates
+		//get historic density estimates 
 		for(int j = 0; j<N; j++)  //for all fitting positions F
 		{
-			//k is a (N × 1)-vector that is obtained by spatiotemporal
-			//density estimation for the N fitting positions !using the sample S!
-			//as reference instances and pre-tuned spatial and temporal bandwidths.
-			k[j] =  KDE(F.get(j), spatialBWidth , S);  // TODO: why is t given as a parameter in pseudocode? 
+			//k is a (N * 1)-vector 
+			k[j] =  GaussianSpatialDensityKernel( F.get(j).values, F.get(j).values, spatialBWidth);
+			Visualizer.AddDensityLineSet(F.get(j),GaussianSpatialDensityKernel(F.get(j).values, F.get(j).values, spatialBWidth), "", spatialBWidth, 0);
+			Visualizer.AddDensityLinePoint(F.get(j), GaussianSpatialDensityKernel(F.get(j).values, F.get(j).values, spatialBWidth), "F"+j, spatialBWidth,0);
+			F.get(j).SetDensity(k[j]);
+
 			System.out.println( "k[" + j + "] = " + k[j]);
-			
-			//add fitting point F(j) to visualization
-			Visualizer.AddDensityLinePoint(F.get(j), k[j], "F"+j, spatialBWidth,1);
-			
+		
 			//for each pseudo point compute its density with a kernel 
 			// as the sum of gaussian densities of neighboring sample points
+			
 			for(int i=0; i<m; i++)
 			{
 				//double kernel = GaussianSpatialDensityKernel(F.get(j).values, Mu.get(i).values, spatialBWidth);
 				double kernel = GaussianSpatialDensityKernel( F.get(j).values, Mu.get(i).values, spatialBWidth); //>< if time same
+				//spatial density of m-th pseudo-point's kernel at f-th fitting position
+				K[j][i] = kernel * k[j];
+
+				kMatrix = kMatrix + round(K[j][i], 3) + " | ";
 				
-				for(int o=0; o<=O; o++)
-				{
-					int a = i+o*m;
-					if(Mu.get(i).time == F.get(j).time)
-						K[j][i+o*m] = kernel * Math.pow(Mu.get(i).time, o);
-					//else
-					//adding a random val only as a cheat to not have singular matrices, should be removed when all parameters are right
-						//K[j][i+o*m] += 0.000001; 
-					
-					//Kj,i+o·m = Ki(xj) · To^j  --> this is the description from a line from page 5
-					//BUT in pseudocode line 6: Kj,i = SpatialDensity( xj - MUi, spatialBWidth, S) -> why xi-MUi???
-					
-					kMatrix = kMatrix + round(K[j][i+o*m], 3) + " | ";
-				}
+				
 			}
+			
 			kMatrix = kMatrix + "\n";
 		}
-		//System.out.println(kMatrix);
 		
+		for(int i=0; i<m; i++)
+		{
+			double muDen = 0;
+			for(int j = 0; j<N; j++)  //for all fitting positions F
+			{
+				muDen += K[j][i];
+			}
+			Mu.get(i).SetDensity(muDen);
+		}
 		
 		String h ="";
 		for(int z=0; z<K.length; z++)
@@ -268,7 +265,6 @@ public class Main {
 		}
 		System.out.println("K = \n" + h);	
 			
-		
 		double[] p = new double[N];
 		double[][] P = new double[N][(m-1) * (O+1)];
 		
@@ -283,7 +279,7 @@ public class Main {
 			{
 				for(int i=0; i< m-1; i++)  
 				{
-					double q = (K[j][i+o*m] - K[j][m-1+o*m])* Math.pow(F.get(j).time, o);
+					double q = (K[j][i] - K[j][m-1])* Math.pow(F.get(j).time, o);
 					P[j][i+o*(m-1)] = q;
 					//if(P[j][i+o*(m-1)] == 0)
 					//	P[j][i+o*(m-1)] += 0.0000001; 
@@ -296,7 +292,7 @@ public class Main {
 		//System.out.println(pMatrix);
 		
 		//add regularisation terms to p and P
-		for(int i=0; i<(m-1); i++)
+		/*for(int i=0; i<(m-1); i++)
 		{
 			//for(int j=0; j<N; j++)
 			{
@@ -316,7 +312,7 @@ public class Main {
 					}
 				}	
 			}
-		}
+		} */
 		
 		String g ="";
 		for(int z=0; z<P.length; z++)
@@ -495,6 +491,8 @@ public class Main {
 	
 	public static double Extrapolation(double[] xValues, double time)
 	{
+		O = alpha.length/Mu.size() -1;
+		
 		double f = 0;		
 		for(int i=0; i<Mu.size(); i++)
 		{
@@ -546,6 +544,85 @@ public class Main {
 		return 1;
 	}
 
+	public static double wtemporal(double delta_t)
+	{
+		double ht = 3;	
+		return Math.max(1/ht - Math.abs(delta_t)/Math.pow(ht,2), 0);
+	}
+	
+	public static double Extra(double[] x, double z)
+	{
+		O = alpha.length/Mu.size() -1;
+		
+		double ht = 1;
+		double delta_t = 3;
+		//double wtemporal = (delta_t)* Math.max(1/ht - Math.abs(delta_t)/Math.pow(ht,2),0); 
+		
+		// Q *M Matrix (only 1 querry point at once)
+		double[][] wt2 = new double[1][Mu.size()];
+		
+		 for( int i = 0; i<wt2.length; i++)
+		 {	
+			for(int j=0; j< wt2[0].length; j++)
+			{
+				//wt = wtemporal(repmat(RefT',length(QueryT),1)-repmat(QueryT,1,length(RefT))); 
+				double w = Mu.get(j).time - z;
+				double wFunc = wtemporal(w);
+				wt2[i][j] = wFunc;
+				for(int o = 0; o<O; o++)
+				{
+									
+					wt2[i][j] = wt2[i][j] + Math.pow(z, o)*alpha[Mu.size()*o+j];	
+				}
+				if(wt2[i][j] < 0)
+				{
+					wt2[i][j] = 0; //non-negativity correction
+				}
+			}
+		 }
+	 
+		 double sum = 0;
+		//row-sum equals one correction
+		 for(int j=0; j< wt2[0].length; j++)
+		 {
+			//containing the sum of each row.
+			 
+			sum += wt2[0][j];	 
+		 }
+		 
+		 for(int j=0; j< wt2[0].length; j++)
+		 {
+			 wt2[0][j] = wt2[0][j]/sum;
+		 }
+		 //calculate spatial densities
+		 //TODO: take Mus density into account?
+		 double[][] ds = new double [1][Mu.size()];
+		 for(int i = 0; i < Mu.size(); i++)
+		 {
+			 double kernel = GaussianSpatialDensityKernel(Mu.get(i).values, x, spatialBWidth); //>< if time same
+			 ds [0][i] = kernel * Mu.get(i).density;
+		 }
+		 
+		 //combine into spatio-temporal extrapolated densities:
+
+		 //.* is elementwise multiplication
+		 //ds.*wtnorm
+		 //(Q x 1) 
+		 double dst = 0;
+		 for(int i = 0; i < Mu.size(); i++)
+		 {
+			// dst += ds[0][i]*Mu.get(i).values[0];  //dst = sum(ds.*wtnorm,2);
+			 dst += ds[0][i]* wt2[0][i];
+					 
+		 }
+		 
+		 System.out.println(dst);
+		 int g;
+		 if(2-x[0] < 0.05)
+			 g =0;
+		 return dst;
+	}
+	
 }
 
 

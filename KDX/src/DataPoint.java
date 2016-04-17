@@ -10,6 +10,8 @@ public class DataPoint {
 	//in which column in the data is the time 
 	public static int TIME_COLUMN = 1;
 	
+	
+	
 	//min and max values for each dimension (ALL data)
 	public static double[] minValues;
 	public static double[] maxValues;
@@ -29,6 +31,9 @@ public class DataPoint {
 	
 	//for how many dimensions the values were read in 
 	int indexFilled = 0;
+	
+	//computed density
+	public double density;
 	
 	
 	public DataPoint()
@@ -106,5 +111,10 @@ public class DataPoint {
 		
 		this.time = time;
 		return true;
+	}
+	
+	public void SetDensity(double den)
+	{
+		this.density = den;
 	}
 }
